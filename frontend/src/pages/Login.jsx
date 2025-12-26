@@ -42,32 +42,32 @@ const Login = () => {
                 <form onSubmit={handleSubmit} className="card p-6 space-y-4">
                     <div>
                         <label className="block text-sm font-medium mb-2">Email</label>
-                        <div className="relative">
+                        <div className="input-group">
+                            <Mail className="input-icon w-4 h-4" />
                             <input
                                 type="email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 placeholder="you@example.com"
-                                className="input pl-10"
+                                className="input"
                                 required
                             />
-                            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)]" />
                         </div>
                     </div>
 
                     <div>
                         <label className="block text-sm font-medium mb-2">Password</label>
-                        <div className="relative">
+                        <div className="input-group">
+                            <Lock className="input-icon w-4 h-4" />
                             <input
                                 type="password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 placeholder="••••••••"
-                                className="input pl-10"
+                                className="input"
                                 required
                                 minLength={6}
                             />
-                            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)]" />
                         </div>
                     </div>
 

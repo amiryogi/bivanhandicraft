@@ -68,23 +68,21 @@ categorySchema.virtual('subcategories', {
 /**
  * Pre-save middleware to generate slug
  */
-categorySchema.pre('save', function (next) {
+categorySchema.pre('save', async function () {
     if (this.isModified('name')) {
         this.slug = createSlug(this.name);
     }
-    next();
 });
 
 /**
  * Pre-remove middleware to handle cascading
  * Sets children's parent to null (orphan) instead of deleting
  */
-categorySchema.pre('deleteOne', { document: true }, async function (next) {
+categorySchema.pre('deleteOne', { document: true }, async function () {
     await this.model('Category').updateMany(
         { parent: this._id },
         { parent: null }
     );
-    next();
 });
 
 /**

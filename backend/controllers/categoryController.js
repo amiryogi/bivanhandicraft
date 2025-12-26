@@ -36,6 +36,21 @@ const getAllCategoriesFlat = asyncHandler(async (req, res) => {
 });
 
 /**
+ * @desc    Get all categories for admin
+ * @route   GET /api/v1/admin/categories
+ * @access  Private/Admin
+ */
+const getAdminCategories = asyncHandler(async (req, res) => {
+    const categories = await categoryService.getAdminCategories();
+
+    res.status(200).json({
+        status: 'success',
+        results: categories.length,
+        data: { categories },
+    });
+});
+
+/**
  * @desc    Get single category
  * @route   GET /api/v1/categories/:slug
  * @access  Public
@@ -95,7 +110,9 @@ const deleteCategory = asyncHandler(async (req, res) => {
 
 module.exports = {
     getCategories,
+    getCategories,
     getAllCategoriesFlat,
+    getAdminCategories,
     getCategory,
     createCategory,
     updateCategory,

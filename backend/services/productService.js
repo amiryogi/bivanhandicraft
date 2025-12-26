@@ -6,6 +6,7 @@ const { Product, Category } = require('../models');
 const { paginate } = require('../utils/helpers');
 const AppError = require('../utils/AppError');
 const { deleteImage } = require('../config/cloudinary');
+const mongoose = require('mongoose');
 
 /**
  * Get all products with filters and pagination
@@ -27,11 +28,16 @@ const getProducts = async (options = {}) => {
 
     if (category) {
         // Find category by slug or ID
-        const cat = await Category.findOne({
-            $or: [{ slug: category }, { _id: category }],
-        });
+        let catQuery = { slug: category };
+        if (mongoose.Types.ObjectId.isValid(category)) {
+            catQuery = { $or: [{ slug: category }, { _id: category }] };
+        }
+
+        const cat = await Category.findOne(catQuery);
         if (cat) {
-            filter.category = cat._id;
+            // Find all subcategories to include their products too
+            const subCategories = await Category.find({ parent: cat._id }).distinct('_id');
+            filter.category = { $in: [cat._id, ...subCategories] };
         }
     }
 

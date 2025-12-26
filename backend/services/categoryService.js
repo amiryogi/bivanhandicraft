@@ -23,6 +23,15 @@ const getAllCategoriesFlat = async () => {
 };
 
 /**
+ * Get all categories for admin (flat list, include inactive)
+ */
+const getAdminCategories = async () => {
+    return Category.find()
+        .sort({ order: 1, name: 1 })
+        .populate('parent', 'name slug');
+};
+
+/**
  * Get single category by slug
  */
 const getCategoryBySlug = async (slug) => {
@@ -98,6 +107,8 @@ const deleteCategory = async (categoryId) => {
 module.exports = {
     getCategories,
     getAllCategoriesFlat,
+    getAdminCategories,
+    getCategoryBySlug,
     getCategoryBySlug,
     createCategory,
     updateCategory,

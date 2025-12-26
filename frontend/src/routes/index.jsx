@@ -15,6 +15,9 @@ import AdminRoute from './AdminRoute';
 import Home from '../pages/Home';
 import Products from '../pages/Products';
 import ProductDetail from '../pages/ProductDetail';
+import Categories from '../pages/Categories';
+import Orders from '../pages/Orders'; // Real page
+import OrderDetail from '../pages/OrderDetail'; // Real page
 import Login from '../pages/Login';
 import Register from '../pages/Register';
 import Cart from '../pages/Cart';
@@ -22,10 +25,7 @@ import Checkout from '../pages/Checkout';
 import OrderSuccess from '../pages/OrderSuccess';
 import OrderFailed from '../pages/OrderFailed';
 import {
-    Categories,
     Profile,
-    Orders,
-    OrderDetail,
     NotFound,
 } from '../pages/placeholders';
 

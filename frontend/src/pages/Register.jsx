@@ -58,82 +58,82 @@ const Register = () => {
                 <form onSubmit={handleSubmit} className="card p-6 space-y-4">
                     <div>
                         <label className="block text-sm font-medium mb-2">Full Name</label>
-                        <div className="relative">
+                        <div className="input-group">
+                            <User className="input-icon w-4 h-4" />
                             <input
                                 type="text"
                                 name="name"
                                 value={formData.name}
                                 onChange={handleChange}
                                 placeholder="John Doe"
-                                className="input pl-10"
+                                className="input"
                                 required
                             />
-                            <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)]" />
                         </div>
                     </div>
 
                     <div>
                         <label className="block text-sm font-medium mb-2">Email</label>
-                        <div className="relative">
+                        <div className="input-group">
+                            <Mail className="input-icon w-4 h-4" />
                             <input
                                 type="email"
                                 name="email"
                                 value={formData.email}
                                 onChange={handleChange}
                                 placeholder="you@example.com"
-                                className="input pl-10"
+                                className="input"
                                 required
                             />
-                            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)]" />
                         </div>
                     </div>
 
                     <div>
                         <label className="block text-sm font-medium mb-2">Phone</label>
-                        <div className="relative">
+                        <div className="input-group">
+                            <Phone className="input-icon w-4 h-4" />
                             <input
                                 type="tel"
                                 name="phone"
                                 value={formData.phone}
                                 onChange={handleChange}
                                 placeholder="+977 98XXXXXXXX"
-                                className="input pl-10"
+                                className="input"
                             />
-                            <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)]" />
                         </div>
                     </div>
 
                     <div>
                         <label className="block text-sm font-medium mb-2">Password</label>
-                        <div className="relative">
+                        <div className="input-group">
+                            <Lock className="input-icon w-4 h-4" />
                             <input
                                 type="password"
                                 name="password"
                                 value={formData.password}
                                 onChange={handleChange}
                                 placeholder="••••••••"
-                                className="input pl-10"
+                                className="input"
                                 required
                                 minLength={6}
                             />
-                            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)]" />
                         </div>
                     </div>
 
                     <div>
                         <label className="block text-sm font-medium mb-2">Confirm Password</label>
-                        <div className="relative">
+                        <div className="input-group">
+                            <Lock className="input-icon w-4 h-4" />
                             <input
                                 type="password"
                                 name="confirmPassword"
                                 value={formData.confirmPassword}
                                 onChange={handleChange}
                                 placeholder="••••••••"
-                                className="input pl-10"
+                                className="input"
                                 required
                                 minLength={6}
                             />
-                            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)]" />
                         </div>
                         {formData.password && formData.confirmPassword && formData.password !== formData.confirmPassword && (
                             <p className="text-sm text-[var(--color-error)] mt-1">Passwords don't match</p>

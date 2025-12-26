@@ -40,7 +40,7 @@ export const deleteProductImage = (productId, imageId) =>
 /**
  * Categories APIs
  */
-export const getCategories = () => api.get('/categories/all');
+export const getCategories = () => api.get('/admin/categories');
 
 export const getCategoryById = (id) => api.get(`/categories/${id}`);
 

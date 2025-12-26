@@ -79,15 +79,15 @@ const Header = () => {
 
                     {/* Search Bar */}
                     <form onSubmit={handleSearch} className="hidden lg:flex items-center">
-                        <div className="relative">
+                        <div className="input-group">
+                            <Search className="input-icon w-4 h-4" />
                             <input
                                 type="text"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 placeholder="Search products..."
-                                className="input w-64 pl-10 py-2 text-sm"
+                                className="input w-64 py-2 text-sm"
                             />
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)]" />
                         </div>
                     </form>
 
@@ -187,15 +187,15 @@ const Header = () => {
                 {mobileMenuOpen && (
                     <div className="md:hidden py-4 border-t border-[var(--color-border)]">
                         <form onSubmit={handleSearch} className="mb-4">
-                            <div className="relative">
+                            <div className="input-group">
+                                <Search className="input-icon w-4 h-4" />
                                 <input
                                     type="text"
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     placeholder="Search products..."
-                                    className="input w-full pl-10"
+                                    className="input w-full"
                                 />
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)]" />
                             </div>
                         </form>
 

@@ -87,6 +87,7 @@ router.post('/products/:id/images', mongoIdValidator('id'), uploadProductImages.
 router.delete('/products/:id/images/:imageId', productController.deleteImage);
 
 // ==================== CATEGORIES ====================
+router.get('/categories', categoryController.getAdminCategories);
 router.post('/categories', createCategoryValidator, categoryController.createCategory);
 router.put('/categories/:id', mongoIdValidator('id'), categoryController.updateCategory);
 router.delete('/categories/:id', mongoIdValidator('id'), categoryController.deleteCategory);

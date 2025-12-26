@@ -116,7 +116,7 @@ const createCategoryValidator = [
         .trim()
         .isLength({ max: 500 }).withMessage('Description cannot exceed 500 characters'),
     body('parent')
-        .optional()
+        .optional({ nullable: true })
         .isMongoId().withMessage('Invalid parent category ID'),
     handleValidationErrors,
 ];

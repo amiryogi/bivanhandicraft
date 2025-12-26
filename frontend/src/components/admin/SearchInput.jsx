@@ -42,23 +42,23 @@ const SearchInput = ({
     };
 
     return (
-        <div className={`relative ${className}`}>
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)]" />
+        <div className={`input-group ${className}`}>
+            <Search className="input-icon w-4 h-4" />
             <input
                 type="text"
                 value={inputValue}
                 onChange={handleChange}
                 placeholder={placeholder}
                 autoFocus={autoFocus}
-                className="input pl-10 pr-10"
+                className={`input ${inputValue ? 'has-icon-right' : ''}`}
             />
             {inputValue && (
                 <button
                     onClick={handleClear}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-[var(--color-bg)]"
+                    className="input-icon-right p-1 rounded hover:bg-[var(--color-bg)]"
                     aria-label="Clear search"
                 >
-                    <X className="w-4 h-4 text-[var(--color-text-muted)]" />
+                    <X className="w-4 h-4" />
                 </button>
             )}
         </div>
