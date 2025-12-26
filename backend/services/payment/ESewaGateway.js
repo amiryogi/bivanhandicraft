@@ -57,8 +57,8 @@ class ESewaGateway extends IPaymentGateway {
             const productDeliveryCharge = order.pricing.shippingCost || 0;
             const totalAmount = amount;
 
-            // Create unique transaction UUID
-            const transactionUuid = `${order.orderNumber}-${Date.now()}`;
+            // Create unique transaction UUID (use _ as delimiter since order numbers may contain -)
+            const transactionUuid = `${order.orderNumber}_${Date.now()}`;
 
             // Signature message format: total_amount,transaction_uuid,product_code
             const signatureMessage = `total_amount=${totalAmount},transaction_uuid=${transactionUuid},product_code=${this.merchantCode}`;
@@ -191,7 +191,7 @@ class ESewaGateway extends IPaymentGateway {
             // Decode the response data
             const decodedData = JSON.parse(Buffer.from(data.data, 'base64').toString('utf-8'));
 
-            const orderId = decodedData.transaction_uuid.split('-')[0]; // Extract order number
+            const orderId = decodedData.transaction_uuid.split('_')[0]; // Extract order number
 
             if (decodedData.status === 'COMPLETE') {
                 return {

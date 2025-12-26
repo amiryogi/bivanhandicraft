@@ -118,8 +118,11 @@ const createOrder = async (userId, orderData) => {
         }
     }
 
-    // Clear cart
-    await cart.clear();
+    // Clear cart only for COD (immediate checkout)
+    // For online payments, cart is cleared after successful payment callback
+    if (paymentMethod === 'cod') {
+        await cart.clear();
+    }
 
     return order;
 };

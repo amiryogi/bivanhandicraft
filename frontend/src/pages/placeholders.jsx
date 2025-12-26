@@ -11,14 +11,6 @@ export const Categories = () => (
     </div>
 );
 
-// Checkout Page
-export const Checkout = () => (
-    <div className="container-app py-12 text-center">
-        <h1 className="text-3xl font-bold mb-4">Checkout</h1>
-        <p className="text-[var(--color-text-muted)]">Complete your order</p>
-    </div>
-);
-
 // Profile Page
 export const Profile = () => (
     <div className="container-app py-12 text-center">
@@ -43,14 +35,6 @@ export const OrderDetail = () => (
     </div>
 );
 
-// Order Success Page
-export const OrderSuccess = () => (
-    <div className="container-app py-12 text-center">
-        <h1 className="text-3xl font-bold mb-4 text-[var(--color-success)]">Order Placed!</h1>
-        <p className="text-[var(--color-text-muted)]">Thank you for your order</p>
-    </div>
-);
-
 // Not Found Page
 export const NotFound = () => (
     <div className="container-app py-20 text-center">
@@ -62,10 +46,9 @@ export const NotFound = () => (
 
 export default {
     Categories,
-    Checkout,
     Profile,
     Orders,
     OrderDetail,
-    OrderSuccess,
     NotFound,
 };
+

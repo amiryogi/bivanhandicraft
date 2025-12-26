@@ -18,15 +18,16 @@ import ProductDetail from '../pages/ProductDetail';
 import Login from '../pages/Login';
 import Register from '../pages/Register';
 import Cart from '../pages/Cart';
+import Checkout from '../pages/Checkout';
+import OrderSuccess from '../pages/OrderSuccess';
+import OrderFailed from '../pages/OrderFailed';
 import {
     Categories,
     Profile,
     Orders,
     OrderDetail,
-    OrderSuccess,
     NotFound,
 } from '../pages/placeholders';
-import Checkout from '../pages/Checkout';
 
 // Admin Pages
 import AdminLayout from '../pages/admin/AdminLayout';
@@ -73,6 +74,10 @@ const router = createBrowserRouter([
             {
                 path: 'order-success',
                 element: <ProtectedRoute><OrderSuccess /></ProtectedRoute>
+            },
+            {
+                path: 'order-failed',
+                element: <OrderFailed />
             },
 
             // 404

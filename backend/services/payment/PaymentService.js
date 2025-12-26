@@ -133,6 +133,10 @@ class PaymentService {
         if (result.verified) {
             await payment.markComplete(result.transactionId, result.rawResponse);
             await order.markPaymentComplete(result.transactionId);
+
+            // Clear cart after successful online payment
+            const { Cart } = require('../../models');
+            await Cart.findOneAndUpdate({ user: order.user }, { $set: { items: [] } });
         } else {
             await payment.markFailed(result.message, result.rawResponse);
         }

@@ -138,6 +138,37 @@ html {
   color: var(--color-text-muted);
 }
 
+/* Input with Icon Support */
+.input-group {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-group .input-icon {
+  position: absolute;
+  left: 0.75rem;
+  color: var(--color-text-muted);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.input-group .input-icon-right {
+  position: absolute;
+  right: 0.75rem;
+  left: auto;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.input-group .input {
+  padding-left: 2.5rem;
+}
+
+.input-group .input.has-icon-right {
+  padding-right: 2.5rem;
+}
+
 /* Badge */
 .badge {
   display: inline-flex;
