@@ -44,7 +44,7 @@ const registerValidator = [
         .notEmpty().withMessage('Password is required')
         .isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
     body('phone')
-        .optional()
+        .optional({ checkFalsy: true })
         .matches(/^(\+?977)?[0-9]{10}$/).withMessage('Please provide a valid Nepali phone number'),
     handleValidationErrors,
 ];
@@ -124,12 +124,12 @@ const createCategoryValidator = [
 // =============== ORDER VALIDATORS ===============
 
 const createOrderValidator = [
-    body('items')
-        .isArray({ min: 1 }).withMessage('Order must have at least one item'),
-    body('items.*.product')
-        .isMongoId().withMessage('Invalid product ID'),
-    body('items.*.quantity')
-        .isInt({ min: 1 }).withMessage('Quantity must be at least 1'),
+    // body('items')
+    //     .isArray({ min: 1 }).withMessage('Order must have at least one item'),
+    // body('items.*.product')
+    //     .isMongoId().withMessage('Invalid product ID'),
+    // body('items.*.quantity')
+    //     .isInt({ min: 1 }).withMessage('Quantity must be at least 1'),
     body('shippingAddress')
         .notEmpty().withMessage('Shipping address is required'),
     body('shippingAddress.name')

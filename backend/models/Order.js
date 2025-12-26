@@ -97,6 +97,7 @@ const orderSchema = new mongoose.Schema({
         type: String,
         unique: true,
         required: true,
+        default: generateOrderNumber,
     },
     user: {
         type: mongoose.Schema.Types.ObjectId,
@@ -183,15 +184,15 @@ orderSchema.virtual('canBeCancelled').get(function () {
     return ['pending', 'confirmed'].includes(this.status);
 });
 
-/**
- * Pre-save middleware to generate order number
- */
-orderSchema.pre('save', function (next) {
-    if (this.isNew && !this.orderNumber) {
-        this.orderNumber = generateOrderNumber();
-    }
-    next();
-});
+// /**
+//  * Pre-save logic moved to schema default
+//  */
+// // orderSchema.pre('save', function (next) {
+// //     if (this.isNew && !this.orderNumber) {
+// //         this.orderNumber = generateOrderNumber();
+// //     }
+// //     next();
+// // });
 
 /**
  * Instance method to update order status

@@ -20,13 +20,13 @@ import Register from '../pages/Register';
 import Cart from '../pages/Cart';
 import {
     Categories,
-    Checkout,
     Profile,
     Orders,
     OrderDetail,
     OrderSuccess,
     NotFound,
 } from '../pages/placeholders';
+import Checkout from '../pages/Checkout';
 
 // Admin Pages
 import AdminLayout from '../pages/admin/AdminLayout';

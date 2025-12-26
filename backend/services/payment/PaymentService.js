@@ -3,6 +3,7 @@
  * High-level service for payment processing
  * Uses PaymentFactory to handle different payment gateways
  */
+const mongoose = require('mongoose');
 const PaymentFactory = require('./PaymentFactory');
 const { Payment, Order } = require('../../models');
 const AppError = require('../../utils/AppError');
@@ -99,9 +100,14 @@ class PaymentService {
      */
     async verifyPayment(orderId, gatewayName, callbackData) {
         // Get order
-        const order = await Order.findOne({
-            $or: [{ _id: orderId }, { orderNumber: orderId }],
-        });
+        let query;
+        if (mongoose.Types.ObjectId.isValid(orderId)) {
+            query = { $or: [{ _id: orderId }, { orderNumber: orderId }] };
+        } else {
+            query = { orderNumber: orderId };
+        }
+
+        const order = await Order.findOne(query);
 
         if (!order) {
             throw new AppError('Order not found', 404);
@@ -114,6 +120,8 @@ class PaymentService {
         }).sort({ createdAt: -1 });
 
         if (!payment) {
+            // If payment record not found, try to find by transaction ID or create new?
+            // Usually should exist from initiation.
             throw new AppError('Payment record not found', 404);
         }
 

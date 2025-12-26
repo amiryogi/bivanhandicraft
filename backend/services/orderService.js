@@ -48,7 +48,7 @@ const createOrder = async (userId, orderData) => {
 
                 // Check variant stock
                 const variant = product.variants.id(sv.variantId);
-                const option = variant?.options.id(sv.optionId);
+                const option = variant ? variant.options.id(sv.optionId) : null;
                 if (!option || option.stock < item.quantity) {
                     throw new AppError(`Insufficient stock for ${product.name} (${sv.variantName}: ${sv.optionValue})`, 400);
                 }

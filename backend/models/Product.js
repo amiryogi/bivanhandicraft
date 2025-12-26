@@ -196,7 +196,7 @@ productSchema.virtual('inStock').get(function () {
 /**
  * Pre-save middleware to generate slug
  */
-productSchema.pre('save', async function (next) {
+productSchema.pre('save', async function () {
     if (this.isModified('name')) {
         let slug = createSlug(this.name);
 
@@ -208,7 +208,6 @@ productSchema.pre('save', async function (next) {
 
         this.slug = slug;
     }
-    next();
 });
 
 /**

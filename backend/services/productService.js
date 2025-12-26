@@ -68,10 +68,17 @@ const getProducts = async (options = {}) => {
  * Get single product by slug or ID
  */
 const getProductBySlug = async (slugOrId) => {
-    const product = await Product.findOne({
-        $or: [{ slug: slugOrId }, { _id: slugOrId }],
-        isActive: true,
-    }).populate('category', 'name slug');
+    const mongoose = require('mongoose');
+    const isId = mongoose.Types.ObjectId.isValid(slugOrId);
+
+    const query = { isActive: true };
+    if (isId) {
+        query.$or = [{ slug: slugOrId }, { _id: slugOrId }];
+    } else {
+        query.slug = slugOrId;
+    }
+
+    const product = await Product.findOne(query).populate('category', 'name slug');
 
     if (!product) {
         throw new AppError('Product not found', 404);

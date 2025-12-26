@@ -69,6 +69,7 @@ const userSchema = new mongoose.Schema({
         type: String,
         trim: true,
         match: [/^(\+?977)?[0-9]{10}$/, 'Please provide a valid Nepali phone number'],
+        set: (v) => (v === '' ? undefined : v),
     },
     role: {
         type: String,
