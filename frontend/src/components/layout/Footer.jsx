@@ -16,7 +16,7 @@ const Footer = () => {
                     <div>
                         <Link to="/" className="inline-block mb-4">
                             <span className="text-2xl font-bold text-[var(--color-primary)]">
-                                Bivan
+                                Nevan
                             </span>
                             <span className="text-lg text-[var(--color-text-muted)]">Handicraft</span>
                         </Link>
@@ -108,7 +108,7 @@ const Footer = () => {
                             </li>
                             <li className="flex items-center gap-3 text-sm text-[var(--color-text-muted)]">
                                 <Mail className="w-4 h-4 flex-shrink-0" />
-                                <span>info@bivanhandicraft.com</span>
+                                <span>anjanastha101@gmail.com</span>
                             </li>
                         </ul>
                     </div>
@@ -117,7 +117,7 @@ const Footer = () => {
                 {/* Bottom Bar */}
                 <div className="mt-8 pt-8 border-t border-[var(--color-border)] flex flex-col md:flex-row justify-between items-center gap-4">
                     <p className="text-sm text-[var(--color-text-muted)]">
-                        © {currentYear} BivanHandicraft. All rights reserved.
+                        © {currentYear} Nevan Handicraft. All rights reserved.
                     </p>
                     <div className="flex items-center gap-4">
                         <img src="/esewa.png" alt="eSewa" className="h-6 opacity-70" />

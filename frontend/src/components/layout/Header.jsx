@@ -56,7 +56,7 @@ const Header = () => {
                     {/* Logo */}
                     <Link to="/" className="flex items-center gap-2">
                         <span className="text-2xl font-bold text-[var(--color-primary)]">
-                            Bivan
+                            Nevan
                         </span>
                         <span className="text-lg text-[var(--color-text-muted)]">Handicraft</span>
                     </Link>

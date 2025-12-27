@@ -46,11 +46,24 @@ const createOrder = async (userId, orderData) => {
                     value: sv.optionValue,
                 });
 
-                // Check variant stock
-                const variant = product.variants.id(sv.variantId);
-                const option = variant ? variant.options.id(sv.optionId) : null;
+                // Check variant stock - Try ID first, then Name fallback
+                let variant = product.variants.id(sv.variantId);
+                if (!variant) {
+                    variant = product.variants.find(v => v.name === sv.variantName);
+                }
+
+                let option = null;
+                if (variant) {
+                    option = variant.options.id(sv.optionId);
+                    if (!option) {
+                        option = variant.options.find(o => o.value === sv.optionValue);
+                    }
+                }
+
                 if (!option || option.stock < item.quantity) {
-                    throw new AppError(`Insufficient stock for ${product.name} (${sv.variantName}: ${sv.optionValue})`, 400);
+                     // Detailed error for debugging if needed, but keeping it user-friendly
+                     const stockMsg = option ? `Only ${option.stock} left` : 'Option not found';
+                     throw new AppError(`Cannot fulfill order for ${product.name} (${sv.variantName}: ${sv.optionValue}). ${stockMsg}`, 400);
                 }
             }
         } else {

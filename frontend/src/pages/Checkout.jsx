@@ -84,6 +84,11 @@ const Checkout = () => {
             return;
         }
 
+        if (!shipping.province) {
+            toast.error('Please select a province');
+            return;
+        }
+
         setLoading(true);
 
         try {
@@ -147,12 +152,21 @@ const Checkout = () => {
 
             // Handle Axios error format
             const msg = error.response?.data?.message || error.message || 'Failed to place order';
+            if (error.response?.data) {
+                console.error('SERVER ERROR DETAIL:', error.response.data);
+                const serverMsg = error.response.data.message || error.response.data.error;
+                if (serverMsg) {
+                     toast.error(`Error: ${serverMsg}`);
+                     return;
+                }
+            }
+            
             if (error.response?.data?.errors) {
                 // Validation errors array
                 const validationMsg = error.response.data.errors.map(e => e.message).join(', ');
                 toast.error(validationMsg);
             } else {
-                toast.error(msg);
+                toast.error(error.message || 'Checkout failed');
             }
         } finally {
             setLoading(false);
