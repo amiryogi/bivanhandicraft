@@ -34,6 +34,7 @@ const ProductDetail = () => {
     const [product, setProduct] = useState(null);
     const [loading, setLoading] = useState(true);
     const [selectedImage, setSelectedImage] = useState(0);
+    const [activeImage, setActiveImage] = useState('');
     const [quantity, setQuantity] = useState(1);
     const [selectedVariants, setSelectedVariants] = useState({});
 
@@ -55,11 +56,18 @@ const ProductDetail = () => {
                 });
                 setSelectedVariants(initialVariants);
                 
+                // Set initial image
+                if (fetchedProduct.images?.length > 0) {
+                    setActiveImage(fetchedProduct.images[0].url);
+                }
+                
                 // Set initial image from color variant if it has one
                 const colorVariant = fetchedProduct.variants?.find(v => v.name.toLowerCase() === 'color');
                 if (colorVariant?.options[0]?.image) {
-                    const imgIndex = fetchedProduct.images.findIndex(img => img.url === colorVariant.options[0].image);
-                    if (imgIndex !== -1) setSelectedImage(imgIndex);
+                   setActiveImage(colorVariant.options[0].image);
+                   const imgIndex = fetchedProduct.images.findIndex(img => img.url === colorVariant.options[0].image);
+                   if (imgIndex !== -1) setSelectedImage(imgIndex);
+                   else setSelectedImage(-1);
                 }
 
             } catch (error) {
@@ -80,9 +88,12 @@ const ProductDetail = () => {
 
         // Switch main image if this option has an image (for colors)
         if (option.image) {
+            setActiveImage(option.image);
             const imgIndex = product.images.findIndex(img => img.url === option.image);
             if (imgIndex !== -1) {
                 setSelectedImage(imgIndex);
+            } else {
+                setSelectedImage(-1); // Deselect gallery thumbnails if showing unique variant image
             }
         }
     };
@@ -160,7 +171,7 @@ const ProductDetail = () => {
                 <div className="space-y-4">
                     <div className="relative aspect-square rounded-xl overflow-hidden bg-[var(--color-bg)]">
                         <img
-                            src={product.images[selectedImage]?.url || '/placeholder.jpg'}
+                            src={activeImage || product.images[0]?.url || '/placeholder.jpg'}
                             alt={product.name}
                             className="w-full h-full object-cover"
                         />
@@ -174,13 +185,21 @@ const ProductDetail = () => {
                         {product.images.length > 1 && (
                             <>
                                 <button
-                                    onClick={() => setSelectedImage((prev) => prev === 0 ? product.images.length - 1 : prev - 1)}
+                                    onClick={() => {
+                                        const newIndex = selectedImage <= 0 ? product.images.length - 1 : selectedImage - 1;
+                                        setSelectedImage(newIndex);
+                                        setActiveImage(product.images[newIndex].url);
+                                    }}
                                     className="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/80 rounded-full flex items-center justify-center hover:bg-white"
                                 >
                                     <ChevronLeft className="w-5 h-5" />
                                 </button>
                                 <button
-                                    onClick={() => setSelectedImage((prev) => prev === product.images.length - 1 ? 0 : prev + 1)}
+                                    onClick={() => {
+                                        const newIndex = selectedImage >= product.images.length - 1 ? 0 : selectedImage + 1;
+                                        setSelectedImage(newIndex);
+                                        setActiveImage(product.images[newIndex].url);
+                                    }}
                                     className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/80 rounded-full flex items-center justify-center hover:bg-white"
                                 >
                                     <ChevronRight className="w-5 h-5" />
@@ -195,7 +214,10 @@ const ProductDetail = () => {
                             {product.images.map((img, idx) => (
                                 <button
                                     key={idx}
-                                    onClick={() => setSelectedImage(idx)}
+                                    onClick={() => {
+                                        setSelectedImage(idx);
+                                        setActiveImage(img.url);
+                                    }}
                                     className={`w-20 h-20 rounded-lg overflow-hidden flex-shrink-0 border-2 ${selectedImage === idx ? 'border-[var(--color-primary)]' : 'border-transparent'
                                         }`}
                                 >
