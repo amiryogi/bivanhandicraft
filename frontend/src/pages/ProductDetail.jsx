@@ -369,6 +369,35 @@ const ProductDetail = () => {
                         </div>
                     ))}
 
+                    {/* Variant Images Grid - Show all uploaded variant images */}
+                    {product.variants?.some(v => v.options.some(o => o.image)) && (
+                        <div className="pt-4 border-t border-[var(--color-border)] mt-4">
+                            <h3 className="font-medium mb-3">Product Images</h3>
+                            <div className="flex flex-wrap gap-3">
+                                {product.variants.flatMap(v => 
+                                    v.options.filter(o => o.image).map(o => ({...o, variantName: v.name}))
+                                ).map((opt, idx) => (
+                                    <button
+                                        key={`${opt._id}-${idx}`}
+                                        onClick={() => handleVariantChange(opt.variantName, opt)}
+                                        className={`relative w-16 h-16 rounded-lg overflow-hidden border-2 transition-all ${
+                                            activeImage === opt.image 
+                                                ? 'border-[var(--color-primary)] ring-2 ring-[var(--color-primary)] ring-offset-2' 
+                                                : 'border-transparent hover:border-gray-300'
+                                        }`}
+                                        title={`${opt.variantName}: ${opt.value}`}
+                                    >
+                                        <img 
+                                            src={opt.image} 
+                                            alt={opt.value} 
+                                            className="w-full h-full object-cover"
+                                        />
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
                     {/* Quantity */}
                     <div>
                         <h3 className="font-medium mb-2">Quantity</h3>
