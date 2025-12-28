@@ -3,7 +3,8 @@
  * Site footer with links and contact info
  */
 import { Link } from 'react-router-dom';
-import { Facebook, Instagram, Mail, Phone, MapPin } from 'lucide-react';
+import { Mail, Phone, MapPin } from 'lucide-react';
+import { FaFacebook, FaInstagram } from 'react-icons/fa';
 
 const Footer = () => {
     const currentYear = new Date().getFullYear();
@@ -29,13 +30,13 @@ const Footer = () => {
                                 href="#"
                                 className="w-9 h-9 bg-[var(--color-bg)] rounded-full flex items-center justify-center hover:bg-[var(--color-primary)] hover:text-white transition-colors"
                             >
-                                <Facebook className="w-4 h-4" />
+                                <FaFacebook className="w-4 h-4" />
                             </a>
                             <a
                                 href="#"
                                 className="w-9 h-9 bg-[var(--color-bg)] rounded-full flex items-center justify-center hover:bg-[var(--color-primary)] hover:text-white transition-colors"
                             >
-                                <Instagram className="w-4 h-4" />
+                                <FaInstagram className="w-4 h-4" />
                             </a>
                         </div>
                     </div>
@@ -100,11 +101,11 @@ const Footer = () => {
                         <ul className="space-y-3">
                             <li className="flex items-start gap-3 text-sm text-[var(--color-text-muted)]">
                                 <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                                <span>Thamel, Kathmandu, Nepal</span>
+                                <span>Panauti, Kavre, Nepal</span>
                             </li>
                             <li className="flex items-center gap-3 text-sm text-[var(--color-text-muted)]">
                                 <Phone className="w-4 h-4 flex-shrink-0" />
-                                <span>+977 9841234567</span>
+                                <span>+977 9844575932</span>
                             </li>
                             <li className="flex items-center gap-3 text-sm text-[var(--color-text-muted)]">
                                 <Mail className="w-4 h-4 flex-shrink-0" />
