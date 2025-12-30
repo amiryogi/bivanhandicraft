@@ -5,11 +5,13 @@
 const corsOptions = {
     origin: function (origin, callback) {
         // Allowed origins from environment
+        const envOrigins = (process.env.FRONTEND_URL || '').split(',').map(url => url.trim());
         const allowedOrigins = [
-            process.env.FRONTEND_URL,
+            ...envOrigins,
             process.env.ADMIN_URL,
-            'http://localhost:8081',
-            // Add production URLs here
+            'http://localhost:8081', // Expo web default
+            'http://localhost:5173', // Vite default
+            'http://localhost:5000', // Backend self
         ].filter(Boolean); // Remove undefined values
 
         // Allow requests with no origin (mobile apps, Postman, etc.)

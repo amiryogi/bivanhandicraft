@@ -10,7 +10,7 @@ const getBaseUrl = () => {
     // Check if we are in production build (you can add specific logic or just default to Prod for the build)
     // For now, let's stick to the Production URL for the deployed app.
     if (!__DEV__) {
-        return 'https://backendnevan.nevanhandicraft.com.np/api/v1';
+        return 'https://backend.nevanhandicraft.com.np/api/v1';
     }
 
     if (Platform.OS === 'web') return 'http://localhost:5000/api/v1';
