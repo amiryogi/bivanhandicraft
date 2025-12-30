@@ -63,7 +63,14 @@ const HomeScreen = ({ navigation }) => {
             <ScrollView showsVerticalScrollIndicator={false}>
                 {/* Header */}
                 <View style={styles.header}>
-                    <Text style={styles.headerTitle}>Nevan Handicraft</Text>
+                    <View style={styles.headerLogoContainer}>
+                        <Image 
+                            source={require('../../../assets/icon.png')} 
+                            style={styles.headerLogo} 
+                            resizeMode="contain"
+                        />
+                        <Text style={styles.headerTitleText}>Nevan Handicraft</Text>
+                    </View>
                     <TouchableOpacity 
                         style={styles.searchBar}
                         onPress={() => navigation.navigate('Search')}
@@ -126,13 +133,24 @@ const styles = StyleSheet.create({
         elevation: 3,
         marginBottom: 8,
     },
-    headerTitle: {
-        fontSize: 28,
-        fontWeight: '700',
-        color: '#4A4A4A', // Softer dark gray
+    headerLogoContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
         marginBottom: 16,
-        fontFamily: 'System', // Or custom if available
+        gap: 12,
     },
+    headerLogo: {
+        width: 40,
+        height: 40,
+        borderRadius: 8,
+    },
+    headerTitleText: {
+        fontSize: 24,
+        fontWeight: '700',
+        color: '#4A4A4A',
+        fontFamily: 'System', 
+    },
+    // Removed old headerTitle style to prevent confusion
     searchBar: {
         flexDirection: 'row',
         alignItems: 'center',

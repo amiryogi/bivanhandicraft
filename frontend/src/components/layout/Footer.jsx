@@ -27,13 +27,13 @@ const Footer = () => {
                         </p>
                         <div className="flex gap-3">
                             <a
-                                href="#"
+                                href="https://www.facebook.com/nevancollections"
                                 className="w-9 h-9 bg-[var(--color-bg)] rounded-full flex items-center justify-center hover:bg-[var(--color-primary)] hover:text-white transition-colors"
                             >
                                 <FaFacebook className="w-4 h-4" />
                             </a>
                             <a
-                                href="#"
+                                href="https://www.instagram.com/nevancollection/"
                                 className="w-9 h-9 bg-[var(--color-bg)] rounded-full flex items-center justify-center hover:bg-[var(--color-primary)] hover:text-white transition-colors"
                             >
                                 <FaInstagram className="w-4 h-4" />
@@ -121,8 +121,16 @@ const Footer = () => {
                         © {currentYear} Nevan Handicraft. All rights reserved.
                     </p>
                     <div className="flex items-center gap-4">
-                        <img src="/esewa.png" alt="eSewa" className="h-6 opacity-70" />
-                        <img src="/khalti.png" alt="Khalti" className="h-6 opacity-70" />
+                        <img 
+                            src="/esewa.png" 
+                            alt="eSewa" 
+                            className="h-8 w-auto object-contain opacity-80" 
+                        />
+                        <img 
+                            src="/khalti.png" 
+                            alt="Khalti" 
+                            className="h-8 w-auto object-contain opacity-80" 
+                        />
                         <span className="text-sm text-[var(--color-text-muted)]">Cash on Delivery</span>
                     </div>
                 </div>

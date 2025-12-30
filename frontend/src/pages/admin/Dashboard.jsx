@@ -19,7 +19,7 @@ import {
     Cell,
 } from 'recharts';
 import {
-    DollarSign,
+    Banknote,
     ShoppingCart,
     Users,
     Package,
@@ -93,9 +93,9 @@ const Dashboard = () => {
 
     const statCards = [
         {
-            label: 'Total Revenue',
+            label: 'Total Sales',
             value: formatPrice(stats?.totalRevenue || 0),
-            icon: DollarSign,
+            icon: Banknote,
             color: 'text-green-500',
             bg: 'bg-green-50 dark:bg-green-900/20',
             trend: '+12%',

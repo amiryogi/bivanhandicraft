@@ -18,6 +18,7 @@ import {
     Package,
     LayoutDashboard,
 } from 'lucide-react';
+import logo from '../../assets/logo.png';
 
 const Header = () => {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -54,11 +55,21 @@ const Header = () => {
             <div className="container-app">
                 <div className="flex items-center justify-between h-16">
                     {/* Logo */}
+                    {/* Logo */}
                     <Link to="/" className="flex items-center gap-2">
-                        <span className="text-2xl font-bold text-[var(--color-primary)]">
-                            Nevan
-                        </span>
-                        <span className="text-lg text-[var(--color-text-muted)]">Handicraft</span>
+                        <img 
+                            src={logo} 
+                            alt="Nevan Handicraft" 
+                            className="h-10 w-auto object-contain" 
+                        />
+                        <div className="flex flex-col leading-none">
+                            <span className="text-xl font-bold text-[var(--color-primary)]">
+                                Nevan
+                            </span>
+                            <span className="text-xs text-[var(--color-text-muted)] font-medium">
+                                Handicraft
+                            </span>
+                        </div>
                     </Link>
 
                     {/* Desktop Navigation */}

@@ -278,7 +278,11 @@ orderSchema.statics.getDashboardStats = async function () {
         this.countDocuments({ createdAt: { $gte: today } }),
         this.countDocuments({ status: 'pending' }),
         this.aggregate([
-            { $match: { 'payment.status': 'paid' } },
+            { 
+                $match: { 
+                    status: { $in: ['confirmed', 'processing', 'shipped', 'delivered'] }
+                } 
+            },
             { $group: { _id: null, total: { $sum: '$pricing.total' } } },
         ]),
     ]);

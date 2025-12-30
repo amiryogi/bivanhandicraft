@@ -5,6 +5,7 @@
  */
 import { Link } from 'react-router-dom';
 import { Heart, Leaf, Baby, Mail } from 'lucide-react';
+import founderImage from '../assets/founder.jpg';
 
 const About = () => {
     return (
@@ -25,8 +26,8 @@ const About = () => {
                     <div className="relative">
                         <div className="absolute inset-0 bg-[var(--color-primary)] opacity-10 rounded-2xl transform translate-x-4 translate-y-4"></div>
                         <img
-                            src="https://images.unsplash.com/photo-1516975080664-ed2fc6a32937?w=800&auto=format&fit=crop&q=60" 
-                            alt="Mother and child"
+                            src={founderImage}
+                            alt="The Founder of Nevan Handicraft"
                             className="relative rounded-2xl shadow-lg w-full h-[500px] object-cover"
                         />
                     </div>
