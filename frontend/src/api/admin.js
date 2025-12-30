@@ -37,8 +37,8 @@ export const uploadProductImages = (id, formData) =>
 export const deleteProductImage = (productId, imageId) =>
     api.delete(`/admin/products/${productId}/images/${imageId}`);
 
-export const uploadVariantImage = (productId, variantId, optionId, formData) =>
-    api.post(`/admin/products/${productId}/variants/${variantId}/options/${optionId}/image`, formData, {
+export const uploadVariantImage = (productId, variantId, formData) =>
+    api.post(`/admin/products/${productId}/variants/${variantId}/image`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
     });
 

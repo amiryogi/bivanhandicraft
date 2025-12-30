@@ -15,49 +15,44 @@ const getCart = async (userId) => {
 
 /**
  * Add item to cart
+ * @param {ObjectId} userId - User ID
+ * @param {ObjectId} productId - Product ID
+ * @param {Number} quantity - Quantity to add
+ * @param {ObjectId|null} variantId - Variant ID (required if product has variants)
  */
-const addToCart = async (userId, productId, quantity = 1, selectedVariants = []) => {
+const addToCart = async (userId, productId, quantity = 1, variantId = null) => {
     // Verify product exists and is active
     const product = await Product.findOne({ _id: productId, isActive: true });
     if (!product) {
         throw new AppError('Product not found', 404);
     }
 
-    // Calculate price with variant modifiers
-    let price = product.price;
-    const processedVariants = [];
+    let price;
+    let variant = null;
 
-    if (selectedVariants && selectedVariants.length > 0) {
-        for (const sv of selectedVariants) {
-            const variant = product.variants.find(v => v.name === sv.variantName);
-            if (!variant) {
-                throw new AppError(`Variant ${sv.variantName} not found`, 400);
-            }
-
-            const option = variant.options.find(o => o.value === sv.optionValue);
-            if (!option) {
-                throw new AppError(`Option ${sv.optionValue} not found for ${sv.variantName}`, 400);
-            }
-
-            // Check stock for variant
-            if (option.stock < quantity) {
-                throw new AppError(`Insufficient stock for ${sv.variantName}: ${sv.optionValue}`, 400);
-            }
-
-            price += option.priceModifier || 0;
-            processedVariants.push({
-                variantName: sv.variantName,
-                optionValue: sv.optionValue,
-                variantId: variant._id,
-                optionId: option._id,
-                priceModifier: option.priceModifier || 0,
-            });
+    // If product has variants, variantId is required
+    if (product.variants && product.variants.length > 0) {
+        if (!variantId) {
+            throw new AppError('Please select a variant (size/color)', 400);
         }
+        
+        variant = product.variants.id(variantId);
+        if (!variant) {
+            throw new AppError('Selected variant not found', 400);
+        }
+
+        // Check variant stock
+        if (variant.stock < quantity) {
+            throw new AppError(`Only ${variant.stock} items available for ${variant.size} - ${variant.color}`, 400);
+        }
+
+        price = variant.price;
     } else {
-        // Check base stock if no variants
+        // No variants - use base price and stock
         if (product.stock < quantity) {
             throw new AppError('Insufficient stock', 400);
         }
+        price = product.price;
     }
 
     // Get or create cart
@@ -66,7 +61,7 @@ const addToCart = async (userId, productId, quantity = 1, selectedVariants = [])
         cart = new Cart({ user: userId, items: [] });
     }
 
-    await cart.addItem(productId, quantity, processedVariants, price);
+    await cart.addItem(productId, quantity, variantId, price);
 
     // Return populated cart
     await cart.populate({
@@ -99,14 +94,14 @@ const updateCartItem = async (userId, itemId, quantity) => {
         throw new AppError('Product is no longer available', 400);
     }
 
-    // Check stock
-    if (item.selectedVariants && item.selectedVariants.length > 0) {
-        for (const sv of item.selectedVariants) {
-            const variant = product.variants.id(sv.variantId);
-            const option = variant?.options.id(sv.optionId);
-            if (option && option.stock < quantity) {
-                throw new AppError(`Only ${option.stock} items available for ${sv.variantName}: ${sv.optionValue}`, 400);
-            }
+    // Check stock based on variantId
+    if (item.variantId) {
+        const variant = product.variants.id(item.variantId);
+        if (!variant) {
+            throw new AppError('Variant no longer available', 400);
+        }
+        if (variant.stock < quantity) {
+            throw new AppError(`Only ${variant.stock} items available for ${variant.size} - ${variant.color}`, 400);
         }
     } else if (product.stock < quantity) {
         throw new AppError(`Only ${product.stock} items available`, 400);
@@ -121,6 +116,7 @@ const updateCartItem = async (userId, itemId, quantity) => {
 
     return cart.calculateTotal();
 };
+
 
 /**
  * Remove item from cart

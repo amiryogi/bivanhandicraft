@@ -27,33 +27,36 @@ const styles = StyleSheet.create({
     card: {
         width: '48%',
         backgroundColor: '#fff',
-        borderRadius: 8,
+        borderRadius: 16, // More rounded
         marginBottom: 16,
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.08, // Softer shadow
+        shadowRadius: 8,
+        elevation: 2,
         overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: '#F0F0F0',
     },
     image: {
         width: '100%',
-        height: 150,
-        backgroundColor: '#f0f0f0',
+        height: 160, // Slightly taller
+        backgroundColor: '#FAFAFA',
     },
     details: {
-        padding: 8,
+        padding: 12,
     },
     name: {
         fontSize: 14,
-        fontWeight: 'bold',
-        color: '#333',
-        marginBottom: 4,
+        fontWeight: '600',
+        color: '#4A4A4A', // Soft dark gray
+        marginBottom: 6,
+        lineHeight: 20,
     },
     price: {
-        fontSize: 14,
-        color: '#e91e63',
-        fontWeight: 'bold',
+        fontSize: 15,
+        color: '#FF9999', // Soft pink accent
+        fontWeight: '700',
     },
 });
 

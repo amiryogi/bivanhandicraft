@@ -25,12 +25,12 @@ const getCart = asyncHandler(async (req, res) => {
  * @access  Private
  */
 const addToCart = asyncHandler(async (req, res) => {
-    const { productId, quantity, selectedVariants } = req.body;
+    const { productId, quantity, variantId } = req.body;
     const cart = await cartService.addToCart(
         req.user._id,
         productId,
         quantity,
-        selectedVariants
+        variantId
     );
 
     res.status(200).json({

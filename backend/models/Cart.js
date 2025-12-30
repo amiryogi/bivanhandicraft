@@ -1,11 +1,11 @@
 /**
  * Cart Model
- * Handles user shopping cart with variant support
+ * Handles user shopping cart with flat variant support
  * 
  * Features:
  * - One cart per user
  * - Price snapshot for change detection
- * - Selected variants tracking
+ * - Single variantId per item (flat variant model)
  */
 const mongoose = require('mongoose');
 
@@ -15,21 +15,18 @@ const cartItemSchema = new mongoose.Schema({
         ref: 'Product',
         required: true,
     },
+    variantId: {
+        type: mongoose.Schema.Types.ObjectId,
+        default: null, // null if product has no variants
+    },
     quantity: {
         type: Number,
         required: true,
         min: [1, 'Quantity must be at least 1'],
         default: 1,
     },
-    selectedVariants: [{
-        variantName: String, // e.g., 'Size'
-        optionValue: String, // e.g., 'XL'
-        variantId: mongoose.Schema.Types.ObjectId,
-        optionId: mongoose.Schema.Types.ObjectId,
-        priceModifier: Number,
-    }],
     priceAtAdd: {
-        type: Number, // Snapshot price when added
+        type: Number, // Snapshot price when added (variant price or base price)
     },
 }, { _id: true, timestamps: true });
 
@@ -67,12 +64,16 @@ cartSchema.methods.calculateTotal = function () {
     for (const item of this.items) {
         if (!item.product) continue;
 
-        let itemPrice = item.product.price;
+        let itemPrice = item.product.price; // Base price fallback
+        let variant = null;
 
-        // Add variant price modifiers
-        if (item.selectedVariants && item.selectedVariants.length > 0) {
-            for (const variant of item.selectedVariants) {
-                itemPrice += variant.priceModifier || 0;
+        // If variantId exists, find the variant and use its price
+        if (item.variantId && item.product.variants) {
+            variant = item.product.variants.find(
+                v => v._id.toString() === item.variantId.toString()
+            );
+            if (variant) {
+                itemPrice = variant.price;
             }
         }
 
@@ -81,6 +82,7 @@ cartSchema.methods.calculateTotal = function () {
 
         itemsWithPrices.push({
             ...item.toObject(),
+            variant, // Include variant data for display
             currentPrice: itemPrice,
             itemTotal,
             priceChanged: item.priceAtAdd !== itemPrice,
@@ -94,23 +96,23 @@ cartSchema.methods.calculateTotal = function () {
     };
 };
 
+
 /**
  * Instance method to add item to cart
+ * @param {ObjectId} productId - Product ID
+ * @param {Number} quantity - Quantity to add
+ * @param {ObjectId|null} variantId - Variant ID (null if no variants)
+ * @param {Number} price - Price snapshot
  */
-cartSchema.methods.addItem = async function (productId, quantity, selectedVariants, price) {
-    // Check if product with same variants exists
+cartSchema.methods.addItem = async function (productId, quantity, variantId, price) {
+    // Check if product with same variant exists
     const existingIndex = this.items.findIndex(item => {
         if (!item.product.equals(productId)) return false;
-
-        // Compare variants
-        const existingVariants = JSON.stringify(
-            (item.selectedVariants || []).map(v => ({ name: v.variantName, value: v.optionValue })).sort()
-        );
-        const newVariants = JSON.stringify(
-            (selectedVariants || []).map(v => ({ name: v.variantName, value: v.optionValue })).sort()
-        );
-
-        return existingVariants === newVariants;
+        
+        // Compare variantId (both null = match, or both equal)
+        const existingVarId = item.variantId ? item.variantId.toString() : null;
+        const newVarId = variantId ? variantId.toString() : null;
+        return existingVarId === newVarId;
     });
 
     if (existingIndex > -1) {
@@ -120,8 +122,8 @@ cartSchema.methods.addItem = async function (productId, quantity, selectedVarian
         // Add new item
         this.items.push({
             product: productId,
+            variantId,
             quantity,
-            selectedVariants,
             priceAtAdd: price,
         });
     }
@@ -129,6 +131,7 @@ cartSchema.methods.addItem = async function (productId, quantity, selectedVarian
     await this.save();
     return this;
 };
+
 
 /**
  * Instance method to update item quantity

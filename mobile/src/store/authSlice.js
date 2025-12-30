@@ -60,7 +60,7 @@ export const checkAuth = createAsyncThunk(
                 return rejectWithValue('No token found');
             }
             const response = await authAPI.getMe();
-            return { user: response.data };
+            return { user: response.data.user };
         } catch (error) {
             await deleteItem('accessToken');
             await deleteItem('refreshToken');

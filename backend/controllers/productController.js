@@ -126,13 +126,13 @@ const deleteImage = asyncHandler(async (req, res) => {
 });
 
 /**
- * @desc    Upload image for variant option (Admin)
- * @route   POST /api/v1/admin/products/:id/variants/:variantId/options/:optionId/image
+ * @desc    Upload image for variant (Admin)
+ * @route   POST /api/v1/admin/products/:id/variants/:variantId/image
  * @access  Private/Admin
  */
 const uploadVariantImage = asyncHandler(async (req, res) => {
-    const { id, variantId, optionId } = req.params;
-    const product = await productService.uploadVariantImage(id, variantId, optionId, req.file);
+    const { id, variantId } = req.params;
+    const product = await productService.uploadVariantImage(id, variantId, req.file);
 
     res.status(200).json({
         status: 'success',

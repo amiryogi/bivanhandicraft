@@ -31,11 +31,31 @@ const RegisterScreen = ({ navigation }) => {
 
     const handleRegister = () => {
         const { firstName, lastName, email, password, phoneNumber } = formData;
+        
         if (!firstName || !lastName || !email || !password) {
             Alert.alert('Error', 'Please fill in all required fields');
             return;
         }
-        dispatch(register(formData));
+
+        if (password.length < 6) {
+            Alert.alert('Error', 'Password must be at least 6 characters');
+            return;
+        }
+
+        // Basic phone validation for Nepal if provided
+        if (phoneNumber && !/^(\+?977)?[0-9]{10}$/.test(phoneNumber)) {
+            Alert.alert('Error', 'Please enter a valid 10-digit Nepali phone number');
+            return;
+        }
+        
+        const registerData = {
+            name: `${firstName} ${lastName}`.trim(),
+            email: email.toLowerCase().trim(),
+            password,
+            phone: phoneNumber
+        };
+        
+        dispatch(register(registerData));
     };
 
     return (
@@ -141,7 +161,7 @@ const RegisterScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#fff',
+        backgroundColor: '#FCFCFC',
     },
     keyboardView: {
         flex: 1,
@@ -156,14 +176,15 @@ const styles = StyleSheet.create({
         marginBottom: 30,
     },
     title: {
-        fontSize: 28,
-        fontWeight: 'bold',
-        color: '#333',
+        fontSize: 32,
+        fontWeight: '700',
+        color: '#4A4A4A',
         marginBottom: 8,
     },
     subtitle: {
         fontSize: 16,
-        color: '#666',
+        color: '#888',
+        fontWeight: '500',
     },
     form: {
         width: '100%',
@@ -171,23 +192,31 @@ const styles = StyleSheet.create({
     row: {
         flexDirection: 'row',
         justifyContent: 'space-between',
+        gap: 12,
     },
     halfInput: {
-        width: '48%',
+        flex: 1,
+        width: undefined, // Controlled by flex
     },
     inputContainer: {
         flexDirection: 'row',
         alignItems: 'center',
         borderWidth: 1,
-        borderColor: '#ddd',
-        borderRadius: 12,
+        borderColor: '#EFEFEF',
+        borderRadius: 16,
         paddingHorizontal: 16,
-        paddingVertical: 12,
+        paddingVertical: 14,
         marginBottom: 16,
-        backgroundColor: '#fafafa',
+        backgroundColor: '#FAFAFA',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.03,
+        shadowRadius: 2,
+        elevation: 1,
     },
     icon: {
         marginRight: 12,
+        opacity: 0.7,
     },
     input: {
         flex: 1,
@@ -195,30 +224,36 @@ const styles = StyleSheet.create({
         color: '#333',
     },
     registerButton: {
-        backgroundColor: '#000',
-        borderRadius: 12,
-        paddingVertical: 16,
+        backgroundColor: '#FF9999',
+        borderRadius: 30,
+        paddingVertical: 18,
         alignItems: 'center',
-        marginTop: 8,
+        marginTop: 16,
+        shadowColor: '#FF9999',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 4,
     },
     registerButtonText: {
         color: '#fff',
-        fontSize: 16,
-        fontWeight: 'bold',
+        fontSize: 18,
+        fontWeight: '700',
+        letterSpacing: 0.5,
     },
     footer: {
         flexDirection: 'row',
         justifyContent: 'center',
-        marginTop: 24,
+        marginTop: 30,
     },
     footerText: {
-        fontSize: 14,
+        fontSize: 15,
         color: '#666',
     },
     linkText: {
-        fontSize: 14,
-        color: '#000',
-        fontWeight: 'bold',
+        fontSize: 15,
+        color: '#FF9999',
+        fontWeight: '700',
     },
 });
 

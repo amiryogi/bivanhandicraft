@@ -25,7 +25,10 @@ const LoginScreen = ({ navigation }) => {
             Alert.alert('Error', 'Please fill in all fields');
             return;
         }
-        dispatch(login({ email, password }));
+        dispatch(login({ 
+            email: email.toLowerCase().trim(), 
+            password 
+        }));
     };
 
     return (
@@ -99,7 +102,7 @@ const LoginScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#fff',
+        backgroundColor: '#FCFCFC',
     },
     keyboardView: {
         flex: 1,
@@ -114,14 +117,15 @@ const styles = StyleSheet.create({
         marginBottom: 40,
     },
     title: {
-        fontSize: 28,
-        fontWeight: 'bold',
-        color: '#333',
+        fontSize: 32,
+        fontWeight: '700',
+        color: '#4A4A4A',
         marginBottom: 8,
     },
     subtitle: {
         fontSize: 16,
-        color: '#666',
+        color: '#888',
+        fontWeight: '500',
     },
     form: {
         width: '100%',
@@ -130,15 +134,21 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         borderWidth: 1,
-        borderColor: '#ddd',
-        borderRadius: 12,
+        borderColor: '#EFEFEF',
+        borderRadius: 16,
         paddingHorizontal: 16,
-        paddingVertical: 12,
+        paddingVertical: 14,
         marginBottom: 16,
-        backgroundColor: '#fafafa',
+        backgroundColor: '#FAFAFA',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.03,
+        shadowRadius: 2,
+        elevation: 1,
     },
     icon: {
         marginRight: 12,
+        opacity: 0.7,
     },
     input: {
         flex: 1,
@@ -146,30 +156,36 @@ const styles = StyleSheet.create({
         color: '#333',
     },
     loginButton: {
-        backgroundColor: '#000',
-        borderRadius: 12,
-        paddingVertical: 16,
+        backgroundColor: '#FF9999',
+        borderRadius: 30,
+        paddingVertical: 18,
         alignItems: 'center',
-        marginTop: 8,
+        marginTop: 16,
+        shadowColor: '#FF9999',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 4,
     },
     loginButtonText: {
         color: '#fff',
-        fontSize: 16,
-        fontWeight: 'bold',
+        fontSize: 18,
+        fontWeight: '700',
+        letterSpacing: 0.5,
     },
     footer: {
         flexDirection: 'row',
         justifyContent: 'center',
-        marginTop: 24,
+        marginTop: 30,
     },
     footerText: {
-        fontSize: 14,
+        fontSize: 15,
         color: '#666',
     },
     linkText: {
-        fontSize: 14,
-        color: '#000',
-        fontWeight: 'bold',
+        fontSize: 15,
+        color: '#FF9999', // Matching accent
+        fontWeight: '700',
     },
 });
 

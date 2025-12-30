@@ -19,7 +19,7 @@ connectDB();
 
 // Start server
 const PORT = process.env.PORT || 5000;
-const server = app.listen(PORT, () => {
+const server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`
 ╔═══════════════════════════════════════════════════════════╗
 ║                                                           ║
@@ -27,8 +27,8 @@ const server = app.listen(PORT, () => {
 ║                                                           ║
 ║   Environment: ${process.env.NODE_ENV || 'development'}                              ║
 ║   Port: ${PORT}                                            ║
-║   URL: http://localhost:${PORT}                            ║
-║   API: http://localhost:${PORT}/api/v1                     ║
+║   URL: http://0.0.0.0:${PORT}                            ║
+║   API: http://192.168.1.3:${PORT}/api/v1                 ║
 ║                                                           ║
 ╚═══════════════════════════════════════════════════════════╝
   `);

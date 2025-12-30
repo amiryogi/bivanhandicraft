@@ -112,140 +112,96 @@ const ProductForm = ({ product, categories, onSuccess, onCancel }) => {
         return Object.keys(newErrors).length === 0;
     };
 
-    // Add new variant
+    // Add new variant (flat structure)
     const handleAddVariant = () => {
         setVariants((prev) => [
             ...prev,
             {
                 _id: `temp-${Date.now()}`,
-                name: '',
-                options: [{ _id: `temp-opt-${Date.now()}`, value: '', priceModifier: 0, stock: 0, image: '' }],
+                size: '',
+                color: '',
+                price: formData.price || 0,
+                stock: 0,
+                image: '',
             },
         ]);
     };
 
-    // Update variant name
-    const handleVariantNameChange = (variantIndex, name) => {
+    // Update variant field
+    const handleVariantChange = (index, field, value) => {
         setVariants((prev) => {
             const updated = [...prev];
-            updated[variantIndex] = { ...updated[variantIndex], name };
-            return updated;
-        });
-    };
-
-    // Add variant option
-    const handleAddOption = (variantIndex) => {
-        setVariants((prev) => {
-            const updated = [...prev];
-            updated[variantIndex] = {
-                ...updated[variantIndex],
-                options: [
-                    ...updated[variantIndex].options,
-                    { _id: `temp-opt-${Date.now()}`, value: '', priceModifier: 0, stock: 0, image: '' },
-                ],
-            };
-            return updated;
-        });
-    };
-
-    // Update variant option
-    const handleOptionChange = (variantIndex, optionIndex, field, value) => {
-        setVariants((prev) => {
-            const updated = [...prev];
-            updated[variantIndex] = {
-                ...updated[variantIndex],
-                options: updated[variantIndex].options.map((opt, idx) =>
-                    idx === optionIndex
-                        ? { ...opt, [field]: field === 'value' ? value : parseFloat(value) || 0 }
-                        : opt
-                ),
+            updated[index] = {
+                ...updated[index],
+                [field]: field === 'price' || field === 'stock' ? parseFloat(value) || 0 : value,
             };
             return updated;
         });
     };
 
     // Remove variant
-    const handleRemoveVariant = (variantIndex) => {
-        setVariants((prev) => prev.filter((_, idx) => idx !== variantIndex));
+    const handleRemoveVariant = (index) => {
+        setVariants((prev) => prev.filter((_, idx) => idx !== index));
     };
 
-    // Remove option
-    const handleRemoveOption = (variantIndex, optionIndex) => {
+    // Initialize/Duplicate variant from another
+    const handleDuplicateVariant = (index) => {
         setVariants((prev) => {
-            const updated = [...prev];
-            updated[variantIndex] = {
-                ...updated[variantIndex],
-                options: updated[variantIndex].options.filter((_, idx) => idx !== optionIndex),
-            };
-            // Remove variant if no options left
-            if (updated[variantIndex].options.length === 0) {
-                return prev.filter((_, idx) => idx !== variantIndex);
-            }
-            return updated;
+            const original = prev[index];
+            return [
+                ...prev,
+                {
+                    ...original,
+                    _id: `temp-${Date.now()}`,
+                    stock: 0, // Reset stock for new variant
+                },
+            ];
         });
     };
 
-    // Handle variant option image upload
-    const handleVariantImageUpload = async (variantIndex, optionIndex, file) => {
-        // Create Mode (or no ID yet): Store locally for later upload
-        if (!product?._id) {
-            const previewUrl = URL.createObjectURL(file);
-            setVariants((prev) => {
-                const updated = [...prev];
-                updated[variantIndex] = {
-                    ...updated[variantIndex],
-                    options: updated[variantIndex].options.map((opt, idx) =>
-                        idx === optionIndex
-                            ? { ...opt, image: previewUrl, imageFile: file } // Store file for upload
-                            : opt
-                    ),
-                };
-                return updated;
-            });
-            return;
-        }
+    // Handle variant image upload
+    const handleVariantImageUpload = async (index, file) => {
+        // Local Preview
+        const previewUrl = URL.createObjectURL(file);
+        
+        // Update local state with preview immediately
+        setVariants((prev) => {
+            const updated = [...prev];
+            updated[index] = { ...updated[index], image: previewUrl, imageFile: file };
+            return updated;
+        });
 
-        // Edit Mode: Immediate upload (existing behavior)
-        const variant = variants[variantIndex];
-        const option = variant?.options[optionIndex];
+        // Use temp ID check
+        const variant = variants[index];
+        const isNewVariant = variant._id.toString().startsWith('temp-');
 
-        if (!variant?._id || !option?._id) {
-            toast.error('Please save the product first to get variant IDs');
-            return;
-        }
+        // Only upload immediately if product AND variant exist in DB (Edit Mode)
+        if (product?._id && !isNewVariant) {
+            try {
+                const formData = new FormData();
+                formData.append('image', file);
 
-        try {
-            const formData = new FormData();
-            formData.append('image', file);
+                const response = await adminAPI.uploadVariantImage(
+                    product._id,
+                    variant._id,
+                    formData
+                );
 
-            const response = await adminAPI.uploadVariantImage(
-                product._id,
-                variant._id,
-                option._id,
-                formData
-            );
+                const updatedProduct = response.data.data.product;
+                const updatedVariant = updatedProduct.variants.find(v => v._id === variant._id);
 
-            // Update local state with the new image URL
-            const updatedProduct = response.data.data.product;
-            const updatedVariant = updatedProduct.variants.find(v => v._id === variant._id);
-            const updatedOption = updatedVariant?.options.find(o => o._id === option._id);
-
-            if (updatedOption?.image) {
-                setVariants(prev => {
-                    const updated = [...prev];
-                    updated[variantIndex] = {
-                        ...updated[variantIndex],
-                        options: updated[variantIndex].options.map((opt, idx) =>
-                            idx === optionIndex ? { ...opt, image: updatedOption.image } : opt
-                        ),
-                    };
-                    return updated;
-                });
-                toast.success('Variant image uploaded');
+                if (updatedVariant?.image) {
+                     setVariants((prev) => {
+                        const updated = [...prev];
+                        updated[index] = { ...updated[index], image: updatedVariant.image, imageFile: null };
+                        return updated;
+                    });
+                    toast.success('Variant image uploaded');
+                }
+            } catch (error) {
+                console.error('Variant image upload error:', error);
+                toast.error('Failed to upload variant image');
             }
-        } catch (error) {
-            console.error('Variant image upload error:', error);
-            toast.error('Failed to upload variant image');
         }
     };
 
@@ -332,19 +288,16 @@ const ProductForm = ({ product, categories, onSuccess, onCancel }) => {
             // Add variants only if active and valid
             if (hasVariants) {
                 const cleanVariants = variants
-                    .filter((v) => v.name?.trim() && v.options.length > 0)
+                    .filter((v) => v.size && v.color && v.price >= 0)
                     .map((v) => ({
-                        name: v.name.trim(),
-                        options: v.options
-                            .filter((o) => o.value?.trim())
-                            .map((o) => ({
-                                value: o.value.trim(),
-                                priceModifier: parseFloat(o.priceModifier) || 0,
-                                stock: parseInt(o.stock) || 0,
-                                image: o.image?.trim() || null,
-                            })),
-                    }))
-                    .filter((v) => v.options.length > 0);
+                        size: v.size,
+                        color: v.color.trim(),
+                        price: parseFloat(v.price) || 0,
+                        stock: parseInt(v.stock) || 0,
+                        // If there is a pending file, don't send the blob URL. Send null.
+                        // If no pending file, send existing image URL (or null).
+                        image: v.imageFile ? null : (v.image || null),
+                    }));
 
                 if (cleanVariants.length > 0) {
                     productData.variants = cleanVariants;
@@ -375,35 +328,43 @@ const ProductForm = ({ product, categories, onSuccess, onCancel }) => {
             }
 
             // Upload pending variant images (Create Mode)
-            const variantsWithPendingImages = variants.flatMap((v, vIdx) => 
-                v.options.map((o, oIdx) => ({ ...o, vIdx, oIdx }))
-            ).filter(o => o.imageFile);
+            // Filter variants that have a pending imageFile
+            const variantsWithPendingImages = variants
+                .map((v, index) => ({ ...v, index }))
+                .filter(v => v.imageFile);
 
             if (variantsWithPendingImages.length > 0 && savedProduct._id) {
                 const uploadToastId = toast.loading('Uploading variants...');
                 
-                // Match local variants to saved variants by index
-                // Assuming order is preserved
+                // Match local variants to saved variants by index (assuming order is preserved)
                 const savedVariants = savedProduct.variants || [];
 
-                for (const pendingOpt of variantsWithPendingImages) {
-                    const savedVariant = savedVariants[pendingOpt.vIdx];
-                    const savedOption = savedVariant?.options[pendingOpt.oIdx];
+                for (const pendingVar of variantsWithPendingImages) {
+                    // Match by size and color string (trim both to be safe)
+                    const savedVariant = savedVariants.find(
+                        sv => sv.size === pendingVar.size && sv.color === pendingVar.color.trim()
+                    );
 
-                    if (savedVariant?._id && savedOption?._id) {
+                    console.log('Uploading image for variant:', pendingVar.size, pendingVar.color);
+                    console.log('Matched saved variant:', savedVariant?._id);
+
+                    if (savedVariant?._id) {
                         const formData = new FormData();
-                        formData.append('image', pendingOpt.imageFile);
+                        formData.append('image', pendingVar.imageFile);
 
                         try {
-                            await adminAPI.uploadVariantImage(
+                            const uploadRes = await adminAPI.uploadVariantImage(
                                 savedProduct._id,
                                 savedVariant._id,
-                                savedOption._id,
                                 formData
                             );
+                            console.log('Upload success:', uploadRes.data);
                         } catch (err) {
                             console.error('Failed to upload variant image', err);
+                            toast.error(`Failed to upload image for ${pendingVar.color}`);
                         }
+                    } else {
+                        console.error('Could not find matching saved variant for:', pendingVar);
                     }
                 }
                 toast.dismiss(uploadToastId);
@@ -621,6 +582,8 @@ const ProductForm = ({ product, categories, onSuccess, onCancel }) => {
 
             {/* Variants */}
             <div className="space-y-4">
+            {/* Variants */}
+            <div className="space-y-4">
                 <div className="flex justify-between items-center border-b border-[var(--color-border)] pb-2">
                     <h3 className="font-semibold text-lg">Variants</h3>
                     <div className="flex items-center gap-3">
@@ -637,195 +600,148 @@ const ProductForm = ({ product, categories, onSuccess, onCancel }) => {
                 </div>
 
                 {hasVariants && (
-                    <div className="space-y-6 animate-fadeIn">
-                        {variants.map((variant, variantIndex) => (
+                    <div className="space-y-4 animate-fadeIn">
+                        {/* Headers */}
+                        <div className="hidden md:grid grid-cols-12 gap-4 text-sm font-medium text-[var(--color-text-muted)] border-b pb-2">
+                            <div className="col-span-3">Size <span className="text-red-500">*</span></div>
+                            <div className="col-span-3">Color <span className="text-red-500">*</span></div>
+                            <div className="col-span-2">Price</div>
+                            <div className="col-span-2">Stock</div>
+                            <div className="col-span-2">Image</div>
+                        </div>
+
+                        {/* Variant List */}
+                        {variants.map((variant, index) => (
                             <div
-                                key={variant._id}
-                                className="border border-[var(--color-border)] rounded-lg p-4 bg-gray-50/30"
+                                key={variant._id || index}
+                                className="grid grid-cols-1 md:grid-cols-12 gap-4 items-start p-4 md:p-0 border md:border-0 rounded-lg md:rounded-none bg-gray-50 md:bg-transparent"
                             >
-                                <div className="flex justify-between items-start mb-4">
-                                    <div className="flex-1 mr-4">
-                                        <label className="block text-sm font-medium mb-1">
-                                            Variant Type
-                                        </label>
-                                        <select
-                                            value={variant.name}
-                                            onChange={(e) =>
-                                                handleVariantNameChange(variantIndex, e.target.value)
-                                            }
-                                            className="select w-full md:w-1/3"
-                                        >
-                                            <option value="">Select Type</option>
-                                            <option value="Size">Size</option>
-                                            <option value="Color">Color</option>
-                                            <option value="Material">Material</option>
-                                            <option value="Style">Style</option>
-                                        </select>
-                                    </div>
-                                    <button
-                                        type="button"
-                                        onClick={() => handleRemoveVariant(variantIndex)}
-                                        className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
-                                        title="Remove Variant Group"
+                                {/* Size */}
+                                <div className="col-span-3">
+                                    <label className="md:hidden text-xs font-medium mb-1 block">Size</label>
+                                    <select
+                                        value={variant.size}
+                                        onChange={(e) => handleVariantChange(index, 'size', e.target.value)}
+                                        className="select w-full text-sm"
+                                        required
                                     >
-                                        <Trash2 className="w-4 h-4" />
-                                    </button>
+                                        <option value="">Select Size...</option>
+                                        {SIZE_OPTIONS.map((size) => (
+                                            <option key={size} value={size}>{size}</option>
+                                        ))}
+                                    </select>
                                 </div>
 
-                                {/* Variant Options */}
-                                <div className="space-y-3">
-                                    <div className="grid grid-cols-12 gap-2 text-sm font-medium text-[var(--color-text-muted)]">
-                                        <div className="col-span-3">Value</div>
-                                        <div className="col-span-2">Price +/-</div>
-                                        <div className="col-span-2">Stock</div>
-                                        <div className="col-span-4">Image URL (Optional)</div>
-                                        <div className="col-span-1"></div>
-                                    </div>
+                                {/* Color */}
+                                <div className="col-span-3">
+                                    <label className="md:hidden text-xs font-medium mb-1 block">Color</label>
+                                    <input
+                                        type="text"
+                                        value={variant.color}
+                                        onChange={(e) => handleVariantChange(index, 'color', e.target.value)}
+                                        className="input w-full text-sm"
+                                        placeholder="Color (e.g. Red)"
+                                        required
+                                    />
+                                </div>
 
-                                    {variant.options.map((option, optionIndex) => (
-                                        <div
-                                            key={option._id}
-                                            className="grid grid-cols-12 gap-2 items-center"
-                                        >
-                                            <div className="col-span-3">
-                                                {variant.name === 'Size' ? (
-                                                    <select
-                                                        value={option.value}
-                                                        onChange={(e) =>
-                                                            handleOptionChange(
-                                                                variantIndex,
-                                                                optionIndex,
-                                                                'value',
-                                                                e.target.value
-                                                            )
-                                                        }
-                                                        className={`select w-full text-sm py-2 px-2 ${!option.value ? 'text-gray-400' : ''}`}
-                                                    >
-                                                        <option value="">Select Size...</option>
-                                                        {SIZE_OPTIONS.map((size) => (
-                                                            <option key={size} value={size} className="text-gray-900">
-                                                                {size}
-                                                            </option>
-                                                        ))}
-                                                    </select>
-                                                ) : (
-                                                    <input
-                                                        type="text"
-                                                        value={option.value}
-                                                        onChange={(e) =>
-                                                            handleOptionChange(
-                                                                variantIndex,
-                                                                optionIndex,
-                                                                'value',
-                                                                e.target.value
-                                                            )
-                                                        }
-                                                        className="input w-full"
-                                                        placeholder={variant.name === 'Color' ? 'e.g., Red' : 'Value'}
-                                                    />
-                                                )}
-                                            </div>
-                                            
-                                            <input
-                                                type="number"
-                                                value={option.priceModifier}
-                                                onChange={(e) =>
-                                                    handleOptionChange(
-                                                        variantIndex,
-                                                        optionIndex,
-                                                        'priceModifier',
-                                                        e.target.value
-                                                    )
-                                                }
-                                                className="input col-span-2"
-                                                placeholder="0"
+                                {/* Price */}
+                                <div className="col-span-2">
+                                    <label className="md:hidden text-xs font-medium mb-1 block">Price</label>
+                                    <input
+                                        type="number"
+                                        value={variant.price}
+                                        onChange={(e) => handleVariantChange(index, 'price', e.target.value)}
+                                        className="input w-full text-sm"
+                                        placeholder="0"
+                                        min="0"
+                                        required
+                                    />
+                                </div>
+
+                                {/* Stock */}
+                                <div className="col-span-2">
+                                    <label className="md:hidden text-xs font-medium mb-1 block">Stock</label>
+                                    <input
+                                        type="number"
+                                        value={variant.stock}
+                                        onChange={(e) => handleVariantChange(index, 'stock', e.target.value)}
+                                        className="input w-full text-sm"
+                                        placeholder="0"
+                                        min="0"
+                                        required
+                                    />
+                                </div>
+
+                                {/* Image & Actions */}
+                                <div className="col-span-2 flex items-center gap-2">
+                                    {variant.image ? (
+                                        <div className="relative group">
+                                            <img
+                                                src={variant.image}
+                                                alt="Variant"
+                                                className="w-10 h-10 object-cover rounded border"
                                             />
-                                            <input
-                                                type="number"
-                                                value={option.stock}
-                                                onChange={(e) =>
-                                                    handleOptionChange(
-                                                        variantIndex,
-                                                        optionIndex,
-                                                        'stock',
-                                                        e.target.value
-                                                    )
-                                                }
-                                                className="input col-span-2"
-                                                placeholder="0"
-                                                min="0"
-                                            />
-                                            <div className="col-span-4 flex items-center gap-2">
-                                                {option.image ? (
-                                                    <div className="flex items-center gap-2">
-                                                        <img
-                                                            src={option.image}
-                                                            alt="Variant"
-                                                            className="w-10 h-10 object-cover rounded border"
-                                                        />
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => handleOptionChange(variantIndex, optionIndex, 'image', '')}
-                                                            className="text-xs text-red-500 hover:underline"
-                                                        >
-                                                            Remove
-                                                        </button>
-                                                    </div>
-                                                ) : (
-                                                    <label className="cursor-pointer">
-                                                        <span className="btn btn-secondary text-xs py-1 px-2">
-                                                            Upload Image
-                                                        </span>
-                                                        <input
-                                                            type="file"
-                                                            accept="image/*"
-                                                            className="hidden"
-                                                            onChange={(e) => {
-                                                                const file = e.target.files?.[0];
-                                                                if (file) {
-                                                                    handleVariantImageUpload(variantIndex, optionIndex, file);
-                                                                    e.target.value = '';
-                                                                }
-                                                            }}
-                                                        />
-                                                    </label>
-                                                )}
-                                            </div>
-                                            <div className="col-span-1 flex justify-end">
-                                                <button
-                                                    type="button"
-                                                    onClick={() =>
-                                                        handleRemoveOption(variantIndex, optionIndex)
-                                                    }
-                                                    className="p-1 text-red-500 hover:bg-red-50 rounded"
-                                                >
-                                                    <X className="w-4 h-4" />
-                                                </button>
-                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleVariantChange(index, 'image', '')}
+                                                className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                                            >
+                                                <X className="w-3 h-3" />
+                                            </button>
                                         </div>
-                                    ))}
+                                    ) : (
+                                        <label className="cursor-pointer">
+                                            <div className="w-10 h-10 border border-dashed border-gray-300 rounded flex items-center justify-center hover:bg-gray-50 text-gray-500">
+                                                <Plus className="w-4 h-4" />
+                                            </div>
+                                            <input
+                                                type="file"
+                                                accept="image/*"
+                                                className="hidden"
+                                                onChange={(e) => {
+                                                    const file = e.target.files?.[0];
+                                                    if (file) handleVariantImageUpload(index, file);
+                                                }}
+                                            />
+                                        </label>
+                                    )}
 
-                                    <button
-                                        type="button"
-                                        onClick={() => handleAddOption(variantIndex)}
-                                        className="text-sm text-[var(--color-primary)] hover:underline flex items-center gap-1 font-medium mt-2"
-                                    >
-                                        <Plus className="w-3 h-3" />
-                                        Add Option
-                                    </button>
+                                    <div className="flex ml-auto gap-1">
+                                         <button
+                                            type="button"
+                                            onClick={() => handleDuplicateVariant(index)}
+                                            className="p-1.5 text-blue-500 hover:bg-blue-50 rounded"
+                                            title="Duplicate Variant"
+                                        >
+                                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                            </svg>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleRemoveVariant(index)}
+                                            className="p-1.5 text-red-500 hover:bg-red-50 rounded"
+                                            title="Remove Variant"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         ))}
-                         <button
+
+                        <button
                             type="button"
                             onClick={handleAddVariant}
-                            className="btn btn-secondary text-sm py-2 w-full flex items-center justify-center gap-2 border-dashed"
+                            className="flex items-center gap-2 text-sm text-[var(--color-primary)] font-medium hover:underline mt-2"
                         >
                             <Plus className="w-4 h-4" />
-                            Add Another Variant Group
+                            Add Variant
                         </button>
                     </div>
                 )}
+            </div>
             </div>
 
             {/* Images */}

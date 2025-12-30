@@ -6,11 +6,12 @@ export const cartAPI = {
         return response.data;
     },
 
-    addToCart: async (productId, quantity = 1, selectedVariants = []) => {
+    addToCart: async (productId, quantity = 1, variantId = null, variantDetails = null) => {
         const response = await api.post('/cart/items', {
             productId,
             quantity,
-            selectedVariants,
+            variantId,
+            variantDetails,
         });
         return response.data;
     },

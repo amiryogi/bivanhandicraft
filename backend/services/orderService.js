@@ -34,43 +34,37 @@ const createOrder = async (userId, orderData) => {
             throw new AppError(`Product "${item.product?.name || 'Unknown'}" is no longer available`, 400);
         }
 
-        // Calculate item price with variants
-        let itemPrice = product.price;
-        const variantDetails = [];
+        let itemPrice;
+        let variantSnapshot = null;
+        let variantImage = null;
 
-        if (item.selectedVariants && item.selectedVariants.length > 0) {
-            for (const sv of item.selectedVariants) {
-                itemPrice += sv.priceModifier || 0;
-                variantDetails.push({
-                    name: sv.variantName,
-                    value: sv.optionValue,
-                });
-
-                // Check variant stock - Try ID first, then Name fallback
-                let variant = product.variants.id(sv.variantId);
-                if (!variant) {
-                    variant = product.variants.find(v => v.name === sv.variantName);
-                }
-
-                let option = null;
-                if (variant) {
-                    option = variant.options.id(sv.optionId);
-                    if (!option) {
-                        option = variant.options.find(o => o.value === sv.optionValue);
-                    }
-                }
-
-                if (!option || option.stock < item.quantity) {
-                     // Detailed error for debugging if needed, but keeping it user-friendly
-                     const stockMsg = option ? `Only ${option.stock} left` : 'Option not found';
-                     throw new AppError(`Cannot fulfill order for ${product.name} (${sv.variantName}: ${sv.optionValue}). ${stockMsg}`, 400);
-                }
+        // If variantId exists, validate and get variant data
+        if (item.variantId) {
+            const variant = product.variants.id(item.variantId);
+            if (!variant) {
+                throw new AppError(`Variant not found for ${product.name}`, 400);
             }
+
+            // Check variant stock
+            if (variant.stock < item.quantity) {
+                throw new AppError(
+                    `Only ${variant.stock} items available for ${product.name} (${variant.size} - ${variant.color})`,
+                    400
+                );
+            }
+
+            itemPrice = variant.price;
+            variantImage = variant.image;
+            variantSnapshot = {
+                size: variant.size,
+                color: variant.color,
+            };
         } else {
-            // Check base stock
+            // No variant - use base price and stock
             if (product.stock < item.quantity) {
                 throw new AppError(`Insufficient stock for ${product.name}`, 400);
             }
+            itemPrice = product.price;
         }
 
         const itemSubtotal = itemPrice * item.quantity;
@@ -78,12 +72,13 @@ const createOrder = async (userId, orderData) => {
 
         orderItems.push({
             product: product._id,
+            variantId: item.variantId || null,
             name: product.name,
             slug: product.slug,
-            image: product.images[0]?.url,
+            image: variantImage || product.images[0]?.url,
             price: itemPrice,
             quantity: item.quantity,
-            selectedVariants: variantDetails,
+            variant: variantSnapshot,
             subtotal: itemSubtotal,
         });
     }
@@ -121,13 +116,10 @@ const createOrder = async (userId, orderData) => {
     for (const item of cart.items) {
         const product = await Product.findById(item.product._id || item.product);
         if (product) {
-            const stockUpdates = item.selectedVariants?.map(sv => ({
-                variantId: sv.variantId,
-                optionId: sv.optionId,
+            await product.reduceStock([{
+                variantId: item.variantId || null,
                 quantity: item.quantity,
-            })) || [{ quantity: item.quantity }];
-
-            await product.reduceStock(stockUpdates);
+            }]);
         }
     }
 
@@ -139,6 +131,7 @@ const createOrder = async (userId, orderData) => {
 
     return order;
 };
+
 
 /**
  * Calculate shipping cost based on location
@@ -205,6 +198,9 @@ const getOrderById = async (orderId, userId = null) => {
 /**
  * Cancel order
  */
+/**
+ * Cancel order
+ */
 const cancelOrder = async (orderId, userId, reason) => {
     const order = await Order.findOne({ _id: orderId, user: userId });
     if (!order) {
@@ -221,21 +217,16 @@ const cancelOrder = async (orderId, userId, reason) => {
     for (const item of order.items) {
         const product = await Product.findById(item.product);
         if (product) {
-            // Increase stock back
-            if (item.selectedVariants && item.selectedVariants.length > 0) {
-                for (const sv of item.selectedVariants) {
-                    const variant = product.variants.find(v => v.name === sv.name);
-                    if (variant) {
-                        const option = variant.options.find(o => o.value === sv.value);
-                        if (option) {
-                            option.stock += item.quantity;
-                        }
-                    }
+            // Restore stock based on variantId
+            if (item.variantId) {
+                const variant = product.variants.id(item.variantId);
+                if (variant) {
+                    variant.stock += item.quantity;
                 }
             } else {
                 product.stock += item.quantity;
             }
-            product.soldCount -= item.quantity;
+            product.soldCount = Math.max(0, product.soldCount - item.quantity);
             await product.save();
         }
     }

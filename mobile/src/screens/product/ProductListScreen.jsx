@@ -67,7 +67,7 @@ const ProductListScreen = ({ route, navigation }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#fff',
+        backgroundColor: '#FCFCFC',
     },
     loadingContainer: {
         flex: 1,

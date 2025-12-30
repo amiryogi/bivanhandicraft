@@ -36,7 +36,15 @@ const ProductDetail = () => {
     const [selectedImage, setSelectedImage] = useState(0);
     const [activeImage, setActiveImage] = useState('');
     const [quantity, setQuantity] = useState(1);
-    const [selectedVariants, setSelectedVariants] = useState({});
+    
+    // Flat Variant State
+    const [selectedSize, setSelectedSize] = useState('');
+    const [selectedColor, setSelectedColor] = useState('');
+
+    // Derived state for current variant
+    const currentVariant = product?.variants?.find(
+        v => v.size === selectedSize && v.color === selectedColor
+    );
 
     // Initialize logic
     useEffect(() => {
@@ -47,27 +55,44 @@ const ProductDetail = () => {
                 const fetchedProduct = response.data.product;
                 setProduct(fetchedProduct);
 
-                // Initialize variant selections - single select for ALL
-                const initialVariants = {};
-                fetchedProduct.variants?.forEach((variant) => {
-                    if (variant.options.length > 0) {
-                        initialVariants[variant.name] = variant.options[0];
+                // Initialize variants if they exist
+                if (fetchedProduct.variants?.length > 0) {
+                    // Get unique sizes
+                    const sizes = [...new Set(fetchedProduct.variants.map(v => v.size))];
+                    
+                    // Select first size by default
+                    if (sizes.length > 0) {
+                        const defaultSize = sizes[0];
+                        setSelectedSize(defaultSize);
+
+                        // Get colors for this size
+                        const availableColors = [...new Set(fetchedProduct.variants
+                            .filter(v => v.size === defaultSize)
+                            .map(v => v.color))];
+                        
+                        // Select first available color
+                        if (availableColors.length > 0) {
+                            setSelectedColor(availableColors[0]);
+                            
+                            // Set initial image from the selected variant if it has one
+                            const initialVariant = fetchedProduct.variants.find(
+                                v => v.size === defaultSize && v.color === availableColors[0]
+                            );
+                            
+                            if (initialVariant?.image) {
+                                setActiveImage(initialVariant.image);
+                                // Try to match with gallery index
+                                const imgIndex = fetchedProduct.images.findIndex(img => img.url === initialVariant.image);
+                                if (imgIndex !== -1) setSelectedImage(imgIndex);
+                                else setSelectedImage(-1);
+                            }
+                        }
                     }
-                });
-                setSelectedVariants(initialVariants);
-                
-                // Set initial image
-                if (fetchedProduct.images?.length > 0) {
-                    setActiveImage(fetchedProduct.images[0].url);
-                }
-                
-                // Set initial image from color variant if it has one
-                const colorVariant = fetchedProduct.variants?.find(v => v.name.toLowerCase() === 'color');
-                if (colorVariant?.options[0]?.image) {
-                   setActiveImage(colorVariant.options[0].image);
-                   const imgIndex = fetchedProduct.images.findIndex(img => img.url === colorVariant.options[0].image);
-                   if (imgIndex !== -1) setSelectedImage(imgIndex);
-                   else setSelectedImage(-1);
+                } else {
+                    // No variants, just set main image
+                    if (fetchedProduct.images?.length > 0) {
+                        setActiveImage(fetchedProduct.images[0].url);
+                    }
                 }
 
             } catch (error) {
@@ -79,22 +104,43 @@ const ProductDetail = () => {
         fetchProduct();
     }, [slug]);
 
-    // Single-select variant change for ALL variants
-    const handleVariantChange = (variantName, option) => {
-        setSelectedVariants((prev) => ({
-            ...prev,
-            [variantName]: option,
-        }));
-
-        // Switch main image if this option has an image (for colors)
-        if (option.image) {
-            setActiveImage(option.image);
-            const imgIndex = product.images.findIndex(img => img.url === option.image);
-            if (imgIndex !== -1) {
-                setSelectedImage(imgIndex);
-            } else {
-                setSelectedImage(-1); // Deselect gallery thumbnails if showing unique variant image
+    // Update Color and Image when size changes or color selected
+    const handleSizeChange = (size) => {
+        setSelectedSize(size);
+        
+        // When size changes, check if current color is still valid
+        const nextAvailableColors = [...new Set(product.variants
+            .filter(v => v.size === size)
+            .map(v => v.color))];
+            
+        // Reset color to first available if current invalid, or keep if valid
+        if (!nextAvailableColors.includes(selectedColor)) {
+            const nextColor = nextAvailableColors[0] || '';
+            setSelectedColor(nextColor);
+            
+            // Update image for new combo
+            const nextVariant = product.variants.find(v => v.size === size && v.color === nextColor);
+            if (nextVariant?.image) {
+                setActiveImage(nextVariant.image);
             }
+        } else {
+            // Update image for new combo (same color, new size - might have diff image)
+            const nextVariant = product.variants.find(v => v.size === size && v.color === selectedColor);
+            if (nextVariant?.image) {
+                setActiveImage(nextVariant.image);
+            }
+        }
+    };
+
+    const handleColorChange = (color) => {
+        setSelectedColor(color);
+        // Find variant for this color (and current size) to update image
+        const variant = product.variants.find(v => v.size === selectedSize && v.color === color);
+        if (variant?.image) {
+            setActiveImage(variant.image);
+            const imgIndex = product.images.findIndex(img => img.url === variant.image);
+            if (imgIndex !== -1) setSelectedImage(imgIndex);
+            else setSelectedImage(-1);
         }
     };
 
@@ -104,17 +150,33 @@ const ProductDetail = () => {
             return;
         }
 
-        // Build variants array for cart
-        const variantsToAdd = Object.entries(selectedVariants).map(([name, option]) => ({
-            variantName: name,
-            optionValue: option.value,
-        }));
+        // Validate variant selection if product has variants
+        if (product.variants?.length > 0 && !currentVariant) {
+            toast.error('Please select valid options');
+            return;
+        }
+        
+        // Verify stock
+        if (product.variants?.length > 0) {
+             if (currentVariant.stock < quantity) {
+                 toast.error(`Only ${currentVariant.stock} items available`);
+                 return;
+             }
+        } else if (product.stock < quantity) {
+             toast.error(`Only ${product.stock} items available`);
+             return;
+        }
 
         try {
             await dispatch(addToCart({
                 productId: product._id,
                 quantity,
-                selectedVariants: variantsToAdd,
+                variantId: currentVariant?._id,
+                variantDetails: currentVariant ? {
+                    size: currentVariant.size,
+                    color: currentVariant.color,
+                    image: currentVariant.image
+                } : null
             })).unwrap();
             toast.success('Added to cart!');
         } catch (error) {
@@ -131,8 +193,8 @@ const ProductDetail = () => {
         );
     }
     
-    // ... render check existing ...
-    if (!product) { /* ... same ... */ return (
+    if (!product) { 
+        return (
             <div className="container-app py-20 text-center">
                 <h1 className="text-2xl font-bold mb-4">Product Not Found</h1>
                 <Link to="/products" className="btn btn-primary">
@@ -142,18 +204,27 @@ const ProductDetail = () => {
         );
     }
 
-    const calculateTotalPrice = () => {
-        const basePrice = product.price;
-        // Sum all selected variant modifiers
-        const modifiers = Object.values(selectedVariants).reduce(
-            (sum, opt) => sum + (opt?.priceModifier || 0),
-            0
-        );
-        return basePrice + modifiers;
+    const calculateDisplayPrice = () => {
+        if (currentVariant) {
+            return currentVariant.price;
+        }
+        return product.price; // Fallback or base price
     };
 
-    const currentPrice = calculateTotalPrice();
-    const discount = calculateDiscount(product.comparePrice, currentPrice);
+    const displayPrice = calculateDisplayPrice();
+    const discount = calculateDiscount(product.comparePrice, displayPrice);
+
+    // Get unique sizes for rendering
+    const uniqueSizes = product.variants 
+        ? [...new Set(product.variants.map(v => v.size))]
+        : [];
+
+    // Get available colors for selected size
+    const availableColors = product.variants
+        ? [...new Set(product.variants
+            .filter(v => v.size === selectedSize)
+            .map(v => v.color))]
+        : [];
 
     return (
         <div className="container-app py-8">
@@ -260,9 +331,9 @@ const ProductDetail = () => {
                     {/* Price */}
                     <div className="flex items-baseline gap-3">
                         <span className="text-3xl font-bold text-[var(--color-primary)]">
-                            {formatPrice(currentPrice)}
+                            {formatPrice(displayPrice)}
                         </span>
-                        {product.comparePrice > currentPrice && (
+                        {product.comparePrice > displayPrice && (
                             <span className="text-xl text-[var(--color-text-muted)] line-through">
                                 {formatPrice(product.comparePrice)}
                             </span>
@@ -272,131 +343,66 @@ const ProductDetail = () => {
                     {/* Description */}
                     <p className="text-[var(--color-text-muted)]">{product.description}</p>
 
-                    {/* Variants */}
-                    {product.variants?.map((variant) => (
-                        <div key={variant._id}>
-                            <h3 className="font-medium mb-2">{variant.name}</h3>
-                            
-                            {/* Render based on variant type */}
-                            {variant.name.toLowerCase() === 'size' ? (
-                                // BUTTON SWATCHES FOR SIZE
+                    {/* Flat Variant Selection */}
+                    {product.variants?.length > 0 && (
+                        <div className="space-y-4">
+                            {/* Size Selector */}
+                            <div>
+                                <h3 className="font-medium mb-3">Size</h3>
                                 <div className="flex flex-wrap gap-2">
-                                    {variant.options.map((option) => {
-                                        const isSelected = selectedVariants[variant.name]?._id === option._id;
+                                    {uniqueSizes.map((size) => (
+                                        <button
+                                            key={size}
+                                            onClick={() => handleSizeChange(size)}
+                                            className={`px-4 py-2 rounded-lg border transition-colors ${
+                                                selectedSize === size
+                                                    ? 'border-[var(--color-primary)] bg-[var(--color-primary)] text-white'
+                                                    : 'border-[var(--color-border)] hover:border-[var(--color-primary)]'
+                                            }`}
+                                        >
+                                            {size}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Color Selector (Dependent on Size) */}
+                            <div>
+                                <h3 className="font-medium mb-3">Color</h3>
+                                <div className="flex flex-wrap gap-3">
+                                    {availableColors.map((color) => {
+                                        // Optional: find specific variant to check if it has a color image
+                                        // But typically color is just a string name
+                                        // We can try to use standard CSS colors or simple naming
+                                        
+                                        const colorVariant = product.variants.find(v => v.size === selectedSize && v.color === color);
+                                        const isOutOfStock = colorVariant?.stock === 0;
+
                                         return (
                                             <button
-                                                key={option._id}
-                                                type="button"
-                                                onClick={() => handleVariantChange(variant.name, option)}
-                                                disabled={option.stock === 0}
-                                                className={`px-4 py-2 rounded-lg border-2 text-sm font-medium transition-all
-                                                    ${isSelected
-                                                        ? 'border-[var(--color-primary)] bg-[var(--color-primary)] text-white'
-                                                        : option.stock === 0
-                                                            ? 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'
-                                                            : 'border-[var(--color-border)] hover:border-[var(--color-primary)] bg-white'
+                                                key={color}
+                                                onClick={() => handleColorChange(color)}
+                                                disabled={isOutOfStock}
+                                                className={`px-4 py-2 rounded-lg border transition-colors relative
+                                                    ${selectedColor === color
+                                                        ? 'border-[var(--color-primary)] ring-1 ring-[var(--color-primary)]'
+                                                        : 'border-[var(--color-border)] hover:border-[var(--color-primary)]'
                                                     }
+                                                    ${isOutOfStock ? 'opacity-50 cursor-not-allowed bg-gray-100' : ''}
                                                 `}
                                             >
-                                                {option.value}
-                                                {option.priceModifier > 0 && (
-                                                    <span className="ml-1 text-xs opacity-75">
-                                                        (+{formatPrice(option.priceModifier)})
-                                                    </span>
-                                                )}
+                                                {color}
+                                                {isOutOfStock && <span className="ml-1 text-xs text-red-500">(Out)</span>}
                                             </button>
                                         );
                                     })}
                                 </div>
-                            ) : variant.name.toLowerCase() === 'color' ? (
-                                // SWATCHES FOR COLOR
-                                <div className="flex flex-wrap gap-3">
-                                    {variant.options.map((option) => (
-                                        <button
-                                            key={option._id}
-                                            onClick={() => handleVariantChange(variant.name, option)}
-                                            disabled={option.stock === 0}
-                                            title={`${option.value}${option.priceModifier > 0 ? ` (+${formatPrice(option.priceModifier)})` : ''}`}
-                                            className={`w-10 h-10 rounded-full border-2 transition-all relative
-                                                ${selectedVariants[variant.name]?.value === option.value
-                                                    ? 'border-[var(--color-primary)] scale-110 ring-2 ring-[var(--color-primary)] ring-offset-2'
-                                                    : 'border-gray-200 hover:border-gray-300'
-                                                }
-                                                ${option.stock === 0 ? 'opacity-50 cursor-not-allowed' : ''}
-                                            `}
-                                            style={
-                                                option.image 
-                                                ? { 
-                                                    backgroundImage: `url(${option.image})`,
-                                                    backgroundSize: 'cover',
-                                                    backgroundPosition: 'center',
-                                                    backgroundColor: option.value.toLowerCase() // fallback
-                                                  }
-                                                : { backgroundColor: option.value.toLowerCase() }
-                                            }
-                                        >
-                                            {/* Fallback for invalid colors or just purely visual consistency */}
-                                            <span className="sr-only">{option.value}</span>
-                                            {option.stock === 0 && (
-                                                <div className="absolute inset-0 flex items-center justify-center">
-                                                    <div className="w-full h-0.5 bg-gray-400 rotate-45"></div>
-                                                </div>
-                                            )}
-                                        </button>
-                                    ))}
-                                </div>
-                            ) : (
-                                // STANDARD BUTTONS FOR OTHER VARIANTS
-                                <div className="flex flex-wrap gap-2">
-                                    {variant.options.map((option) => (
-                                        <button
-                                            key={option._id}
-                                            onClick={() => handleVariantChange(variant.name, option)}
-                                            disabled={option.stock === 0}
-                                            className={`px-4 py-2 rounded-lg border transition-colors ${selectedVariants[variant.name]?.value === option.value
-                                                    ? 'border-[var(--color-primary)] bg-[var(--color-primary)] text-white'
-                                                    : option.stock === 0
-                                                        ? 'border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text-muted)] cursor-not-allowed'
-                                                        : 'border-[var(--color-border)] hover:border-[var(--color-primary)]'
-                                                }`}
-                                        >
-                                            {option.value}
-                                            {option.priceModifier > 0 && ` (+${formatPrice(option.priceModifier)})`}
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    ))}
-
-                    {/* Variant Images Grid - Show all uploaded variant images */}
-                    {product.variants?.some(v => v.options.some(o => o.image)) && (
-                        <div className="pt-4 border-t border-[var(--color-border)] mt-4">
-                            <h3 className="font-medium mb-3">Product Images</h3>
-                            <div className="flex flex-wrap gap-3">
-                                {product.variants.flatMap(v => 
-                                    v.options.filter(o => o.image).map(o => ({...o, variantName: v.name}))
-                                ).map((opt, idx) => (
-                                    <button
-                                        key={`${opt._id}-${idx}`}
-                                        onClick={() => handleVariantChange(opt.variantName, opt)}
-                                        className={`relative w-16 h-16 rounded-lg overflow-hidden border-2 transition-all ${
-                                            activeImage === opt.image 
-                                                ? 'border-[var(--color-primary)] ring-2 ring-[var(--color-primary)] ring-offset-2' 
-                                                : 'border-transparent hover:border-gray-300'
-                                        }`}
-                                        title={`${opt.variantName}: ${opt.value}`}
-                                    >
-                                        <img 
-                                            src={opt.image} 
-                                            alt={opt.value} 
-                                            className="w-full h-full object-cover"
-                                        />
-                                    </button>
-                                ))}
                             </div>
                         </div>
                     )}
+                    
+                    {/* Variant Image Grid (Optional - if useful to show all) */}
+                    {/* Dropped to simplify UI, reliant on main image changing */}
 
                     {/* Quantity */}
                     <div>
@@ -410,13 +416,24 @@ const ProductDetail = () => {
                             </button>
                             <span className="w-12 text-center font-medium">{quantity}</span>
                             <button
-                                onClick={() => setQuantity((q) => Math.min(product.stock, q + 1))}
+                                onClick={() => setQuantity((q) => {
+                                    // Determine max stock based on whether variants exist
+                                    const maxStock = product.variants?.length > 0 
+                                        ? 99 // Allow selecting up to 99, backend will validate specific variant stock
+                                        : product.stock;
+                                    return Math.min(maxStock, q + 1);
+                                })}
                                 className="w-10 h-10 rounded-lg border border-[var(--color-border)] flex items-center justify-center hover:bg-[var(--color-bg)]"
                             >
                                 <Plus className="w-4 h-4" />
                             </button>
                             <span className="text-sm text-[var(--color-text-muted)]">
-                                {product.stock} available
+                                {product.variants?.length > 0 ? (
+                                    // Optionally show "In Stock" or verified stock of selected variant if logic allows
+                                    'In Stock' 
+                                ) : (
+                                    `${product.stock} available`
+                                )}
                             </span>
                         </div>
                     </div>
@@ -425,7 +442,7 @@ const ProductDetail = () => {
                     <div className="flex gap-3">
                         <button
                             onClick={handleAddToCart}
-                            disabled={product.stock === 0 || cartLoading}
+                            disabled={(product.variants?.length > 0 ? false : product.stock === 0) || cartLoading}
                             className="btn btn-primary flex-1 py-3 disabled:opacity-50"
                         >
                             {cartLoading ? (
@@ -433,7 +450,12 @@ const ProductDetail = () => {
                             ) : (
                                 <>
                                     <ShoppingCart className="w-5 h-5" />
-                                    {product.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
+                                    {(product.variants?.length > 0 ? (
+                                        // If variants exist, check if ANY variant has stock (roughly) or rely on validation
+                                        'Add to Cart'
+                                    ) : (
+                                        product.stock === 0 ? 'Out of Stock' : 'Add to Cart'
+                                    ))}
                                 </>
                             )}
                         </button>

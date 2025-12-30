@@ -2,11 +2,14 @@ import axios from 'axios';
 import { getItem, setItem, deleteItem } from '../utils/storage';
 import { Platform } from 'react-native';
 
-// Use localhost for Web, 10.0.2.2 for Android Emulator, localhost for iOS Simulator
+// Use machine's local IP for development on real devices/emulators
 const getBaseUrl = () => {
+    // Replace with your machine's local IP (found via ipconfig/ifconfig)
+    const LOCAL_IP = '192.168.1.3'; 
+    
     if (Platform.OS === 'web') return 'http://localhost:5000/api/v1';
-    if (Platform.OS === 'android') return 'http://10.0.2.2:5000/api/v1';
-    return 'http://localhost:5000/api/v1'; // iOS
+    if (Platform.OS === 'android') return `http://${LOCAL_IP}:5000/api/v1`;
+    return `http://${LOCAL_IP}:5000/api/v1`; // iOS
 };
 
 const BASE_URL = getBaseUrl();

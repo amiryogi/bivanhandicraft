@@ -42,7 +42,7 @@ const PaymentScreen = ({ route, navigation }) => {
         if (url.includes('payment/success') || url.includes('success=true')) {
             dispatch(resetCart());
             Alert.alert('Success', 'Payment Successful!', [
-                { text: 'OK', onPress: () => navigation.navigate('HomeTab') }
+                { text: 'OK', onPress: () => navigation.navigate('Main') }
             ]);
         } else if (url.includes('payment/failure') || url.includes('failure=true')) {
             Alert.alert('Failed', 'Payment Failed', [

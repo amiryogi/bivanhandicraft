@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, ScrollView, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useDispatch, useSelector } from 'react-redux';
 import { resetCart } from '../../store/cartSlice';
 import { ordersAPI, paymentsAPI } from '../../api/orders';
@@ -28,7 +28,7 @@ const CheckoutScreen = ({ navigation }) => {
     };
 
     const handlePlaceOrder = async () => {
-        if (!shipping.name || !shipping.street || !shipping.city || !shipping.district || !shipping.phone) {
+        if (!shipping.name || !shipping.city || !shipping.district || !shipping.phone) {
             Alert.alert('Error', 'Please fill in all shipping fields');
             return;
         }
@@ -40,6 +40,7 @@ const CheckoutScreen = ({ navigation }) => {
             const orderPayload = {
                 shippingAddress: {
                     ...shipping,
+                    street: shipping.street || 'N/A', // Default value since input was removed
                     province: parseInt(shipping.province),
                 },
                 paymentMethod,
@@ -58,7 +59,7 @@ const CheckoutScreen = ({ navigation }) => {
             if (paymentMethod === 'cod') {
                 dispatch(resetCart());
                 Alert.alert('Success', 'Order placed successfully!', [
-                    { text: 'OK', onPress: () => navigation.navigate('HomeTab') }
+                    { text: 'OK', onPress: () => navigation.navigate('Main') }
                 ]);
             } else if (paymentMethod === 'esewa' || paymentMethod === 'khalti') {
                 // Navigate to Payment WebView
@@ -79,10 +80,16 @@ const CheckoutScreen = ({ navigation }) => {
         }
     };
 
+    const insets = useSafeAreaInsets();
+
     return (
-        <SafeAreaView style={styles.container}>
-            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
-                <ScrollView contentContainerStyle={styles.content}>
+        <SafeAreaView style={styles.container} edges={['top']}>
+            <KeyboardAvoidingView 
+                behavior={Platform.OS === 'ios' ? 'padding' : undefined} 
+                style={{ flex: 1 }}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+            >
+                <ScrollView contentContainerStyle={[styles.content, { paddingBottom: 100 }]}>
                     <View style={styles.section}>
                         <View style={styles.sectionHeader}>
                             <MapPin size={20} color="#000" />
@@ -100,12 +107,6 @@ const CheckoutScreen = ({ navigation }) => {
                             value={shipping.phone}
                             onChangeText={(t) => handleChange('phone', t)}
                             keyboardType="phone-pad"
-                        />
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Street Address"
-                            value={shipping.street}
-                            onChangeText={(t) => handleChange('street', t)}
                         />
                         <View style={styles.row}>
                             <TextInput
@@ -172,11 +173,9 @@ const CheckoutScreen = ({ navigation }) => {
                             <Text style={styles.totalText}>Rs. {subtotal}</Text>
                         </View>
                     </View>
-                </ScrollView>
 
-                <View style={styles.footer}>
                     <TouchableOpacity
-                        style={styles.placeOrderButton}
+                        style={[styles.placeOrderButton, { marginTop: 24, marginBottom: 40 }]}
                         onPress={handlePlaceOrder}
                         disabled={loading}
                     >
@@ -186,7 +185,7 @@ const CheckoutScreen = ({ navigation }) => {
                             <Text style={styles.placeOrderText}>Place Order - Rs. {subtotal}</Text>
                         )}
                     </TouchableOpacity>
-                </View>
+                </ScrollView>
             </KeyboardAvoidingView>
         </SafeAreaView>
     );
@@ -195,38 +194,50 @@ const CheckoutScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#fff',
+        backgroundColor: '#FCFCFC',
     },
     content: {
-        padding: 16,
+        padding: 20,
     },
     section: {
         marginBottom: 24,
+        backgroundColor: '#fff',
+        padding: 16,
+        borderRadius: 16,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.03,
+        shadowRadius: 4,
+        elevation: 2,
     },
     sectionHeader: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 12,
+        marginBottom: 16,
     },
     sectionTitle: {
         fontSize: 18,
-        fontWeight: 'bold',
+        fontWeight: '600',
         marginLeft: 8,
+        color: '#4A4A4A',
     },
     input: {
         borderWidth: 1,
-        borderColor: '#ddd',
-        borderRadius: 8,
-        padding: 12,
+        borderColor: '#EFEFEF',
+        borderRadius: 12,
+        padding: 14,
         marginBottom: 12,
-        backgroundColor: '#fafafa',
+        backgroundColor: '#FAFAFA',
+        color: '#333',
     },
     row: {
         flexDirection: 'row',
         justifyContent: 'space-between',
+        gap: 12,
     },
     halfInput: {
-        width: '48%',
+        flex: 1,
+        width: undefined, // Controlled by flex
     },
     paymentOptions: {
         flexDirection: 'row',
@@ -234,63 +245,79 @@ const styles = StyleSheet.create({
     },
     paymentOption: {
         flex: 1,
-        padding: 12,
+        padding: 14,
         borderWidth: 1,
-        borderColor: '#ddd',
-        borderRadius: 8,
+        borderColor: '#EFEFEF',
+        borderRadius: 12,
         alignItems: 'center',
         justifyContent: 'center',
+        backgroundColor: '#FAFAFA',
     },
     selectedOption: {
-        borderColor: '#000',
-        backgroundColor: '#000',
+        borderColor: '#FF9999',
+        backgroundColor: '#FFF0F0',
     },
     paymentText: {
-        fontWeight: 'bold',
-        color: '#333',
+        fontWeight: '600',
+        color: '#666',
+        fontSize: 14,
     },
     selectedText: {
-        color: '#fff',
+        color: '#FF9999',
+        fontWeight: '700',
     },
     summary: {
-        backgroundColor: '#f9f9f9',
-        padding: 16,
-        borderRadius: 8,
+        backgroundColor: '#FAFAFA',
+        padding: 20,
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: '#EFEFEF',
     },
     summaryTitle: {
-        fontWeight: 'bold',
-        marginBottom: 12,
+        fontWeight: '600',
+        marginBottom: 16,
+        fontSize: 16,
+        color: '#4A4A4A',
     },
     summaryRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        marginBottom: 8,
+        marginBottom: 10,
     },
     totalRow: {
         borderTopWidth: 1,
-        borderTopColor: '#ddd',
-        paddingTop: 8,
+        borderTopColor: '#E0E0E0',
+        paddingTop: 12,
         marginTop: 8,
     },
     totalText: {
-        fontWeight: 'bold',
-        fontSize: 16,
+        fontWeight: '700',
+        fontSize: 18,
+        color: '#4A4A4A',
     },
     footer: {
-        padding: 16,
+        padding: 20,
         borderTopWidth: 1,
         borderTopColor: '#eee',
     },
     placeOrderButton: {
-        backgroundColor: '#000',
-        padding: 16,
-        borderRadius: 12,
+        backgroundColor: '#FF9999',
+        paddingVertical: 18,
+        borderRadius: 30,
         alignItems: 'center',
+        marginTop: 24,
+        marginBottom: 40,
+        shadowColor: '#FF9999',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 4,
     },
     placeOrderText: {
         color: '#fff',
-        fontWeight: 'bold',
-        fontSize: 16,
+        fontWeight: '700',
+        fontSize: 18,
+        letterSpacing: 0.5,
     },
 });
 

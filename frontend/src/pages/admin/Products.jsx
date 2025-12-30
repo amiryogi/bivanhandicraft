@@ -210,7 +210,7 @@ const Products = () => {
             sortable: true,
             render: (stock, product) => {
                 const totalStock = product.variants?.length > 0
-                    ? product.variants.reduce((sum, v) => sum + v.options.reduce((s, o) => s + o.stock, 0), 0)
+                    ? product.variants.reduce((sum, v) => sum + (v.stock || 0), 0)
                     : stock;
                 return (
                     <span className={totalStock < 10 ? 'text-[var(--color-error)]' : ''}>

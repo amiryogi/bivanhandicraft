@@ -7,7 +7,7 @@ export const fetchCart = createAsyncThunk(
     async (_, { rejectWithValue }) => {
         try {
             const response = await cartAPI.getCart();
-            return response.cart; // response.data.cart based on backend
+            return response.data.cart; 
         } catch (error) {
             return rejectWithValue(error.response?.data?.message || 'Failed to fetch cart');
         }
@@ -16,10 +16,10 @@ export const fetchCart = createAsyncThunk(
 
 export const addToCart = createAsyncThunk(
     'cart/addToCart',
-    async ({ productId, quantity, selectedVariants }, { rejectWithValue }) => {
+    async ({ productId, quantity, variantId, variantDetails }, { rejectWithValue }) => {
         try {
-            const response = await cartAPI.addToCart(productId, quantity, selectedVariants);
-            return response.cart;
+            const response = await cartAPI.addToCart(productId, quantity, variantId, variantDetails);
+            return response.data.cart;
         } catch (error) {
             return rejectWithValue(error.response?.data?.message || 'Failed to add to cart');
         }
@@ -31,7 +31,7 @@ export const updateCartItem = createAsyncThunk(
     async ({ itemId, quantity }, { rejectWithValue }) => {
         try {
             const response = await cartAPI.updateCartItem(itemId, quantity);
-            return response.cart;
+            return response.data.cart;
         } catch (error) {
             return rejectWithValue(error.response?.data?.message || 'Failed to update cart');
         }
@@ -43,7 +43,7 @@ export const removeFromCart = createAsyncThunk(
     async (itemId, { rejectWithValue }) => {
         try {
             const response = await cartAPI.removeFromCart(itemId);
-            return response.cart;
+            return response.data.cart;
         } catch (error) {
             return rejectWithValue(error.response?.data?.message || 'Failed to remove from cart');
         }
@@ -55,7 +55,7 @@ export const clearCart = createAsyncThunk(
     async (_, { rejectWithValue }) => {
         try {
             const response = await cartAPI.clearCart();
-            return response.cart;
+            return response.data.cart;
         } catch (error) {
             return rejectWithValue(error.response?.data?.message || 'Failed to clear cart');
         }

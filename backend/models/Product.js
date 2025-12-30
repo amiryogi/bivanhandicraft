@@ -4,7 +4,7 @@
  * 
  * Features:
  * - Multiple images with Cloudinary
- * - Variants (size, color) with price modifiers
+ * - Flat variants (size + color combination) with individual price/stock/image
  * - Stock tracking per variant
  * - Text search index for product search
  * - Rating aggregation
@@ -12,39 +12,55 @@
 const mongoose = require('mongoose');
 const { createSlug } = require('../utils/helpers');
 
-// Variant option schema (e.g., Size: XL with +100 NPR)
-const variantOptionSchema = new mongoose.Schema({
-    value: {
+// Fixed size options (MUST be enforced)
+const VALID_SIZES = [
+    'Small Size (0-1 yrs)',
+    'Medium Size (1-4 yrs)',
+    'Large Size (4-6 yrs)',
+    'XL Size (6-8 yrs)',
+    'XXL Size (8-10 yrs)',
+    'Standard Size',
+    'One Size',
+];
+
+// Flat variant schema: each variant is a unique size+color combination
+const variantSchema = new mongoose.Schema({
+    size: {
+        type: String,
+        required: true,
+        enum: {
+            values: VALID_SIZES,
+            message: 'Invalid size. Must be one of: ' + VALID_SIZES.join(', ')
+        },
+    },
+    color: {
         type: String,
         required: true,
         trim: true,
     },
-    priceModifier: {
+    price: {
         type: Number,
-        default: 0, // Amount to add/subtract from base price
+        required: [true, 'Variant price is required'],
+        min: [0, 'Price cannot be negative'],
+    },
+    stock: {
+        type: Number,
+        required: true,
+        default: 0,
+        min: [0, 'Stock cannot be negative'],
     },
     image: {
         type: String, // URL of the variant image
         default: null,
     },
-    stock: {
-        type: Number,
-        default: 0,
-        min: [0, 'Stock cannot be negative'],
-    },
-}, { _id: true });
-
-// Variant schema (e.g., Size, Color)
-const variantSchema = new mongoose.Schema({
-    name: {
+    sku: {
         type: String,
-        required: true,
         trim: true,
+        uppercase: true,
     },
-    options: [variantOptionSchema],
 }, { _id: true });
 
-// Image schema
+// Image schema (for product gallery, separate from variant images)
 const imageSchema = new mongoose.Schema({
     url: {
         type: String,
@@ -59,6 +75,7 @@ const imageSchema = new mongoose.Schema({
         default: false,
     },
 }, { _id: true });
+
 
 const productSchema = new mongoose.Schema({
     name: {
@@ -161,13 +178,24 @@ productSchema.index(
 );
 
 /**
- * Virtual for discount percentage
+ * Virtual for discount percentage (based on first variant or base price)
  */
 productSchema.virtual('discountPercentage').get(function () {
-    if (this.comparePrice && this.comparePrice > this.price) {
-        return Math.round(((this.comparePrice - this.price) / this.comparePrice) * 100);
+    const displayPrice = this.variants.length > 0 ? this.variants[0].price : this.price;
+    if (this.comparePrice && this.comparePrice > displayPrice) {
+        return Math.round(((this.comparePrice - displayPrice) / this.comparePrice) * 100);
     }
     return 0;
+});
+
+/**
+ * Virtual for display price (first variant's price or base price)
+ */
+productSchema.virtual('displayPrice').get(function () {
+    if (this.variants.length > 0) {
+        return this.variants[0].price;
+    }
+    return this.price;
 });
 
 /**
@@ -180,14 +208,11 @@ productSchema.virtual('primaryImage').get(function () {
 });
 
 /**
- * Virtual for total stock (including variants)
+ * Virtual for total stock (sum of all variant stocks or base stock)
  */
 productSchema.virtual('totalStock').get(function () {
     if (this.variants.length === 0) return this.stock;
-
-    return this.variants.reduce((total, variant) => {
-        return total + variant.options.reduce((sum, opt) => sum + opt.stock, 0);
-    }, 0);
+    return this.variants.reduce((sum, v) => sum + (v.stock || 0), 0);
 });
 
 /**
@@ -253,24 +278,37 @@ productSchema.statics.getFeatured = function (limit = 8) {
 
 /**
  * Instance method to reduce stock
- * @param {array} items - [{ variantId, optionId, quantity }]
+ * @param {array} items - [{ variantId, quantity }]
  */
 productSchema.methods.reduceStock = async function (items) {
     for (const item of items) {
-        if (item.variantId && item.optionId) {
+        if (item.variantId) {
             const variant = this.variants.id(item.variantId);
             if (variant) {
-                const option = variant.options.id(item.optionId);
-                if (option) {
-                    option.stock -= item.quantity;
-                }
+                variant.stock = Math.max(0, variant.stock - item.quantity);
             }
         } else {
-            this.stock -= item.quantity;
+            this.stock = Math.max(0, this.stock - item.quantity);
         }
     }
     this.soldCount += items.reduce((sum, i) => sum + i.quantity, 0);
     await this.save();
+};
+
+/**
+ * Static method to get a specific variant by ID
+ */
+productSchema.methods.getVariant = function (variantId) {
+    return this.variants.id(variantId);
+};
+
+/**
+ * Static method to find variant by size and color
+ */
+productSchema.methods.findVariant = function (size, color) {
+    return this.variants.find(
+        v => v.size === size && v.color.toLowerCase() === color.toLowerCase()
+    );
 };
 
 const Product = mongoose.model('Product', productSchema);

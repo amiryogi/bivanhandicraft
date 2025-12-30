@@ -18,7 +18,12 @@ const orderItemSchema = new mongoose.Schema({
         ref: 'Product',
         required: true,
     },
-    // Snapshots (product data may change later)
+    // Variant reference (for stock deduction)
+    variantId: {
+        type: mongoose.Schema.Types.ObjectId,
+        default: null,
+    },
+    // Snapshots (product/variant data may change later)
     name: {
         type: String,
         required: true,
@@ -34,15 +39,17 @@ const orderItemSchema = new mongoose.Schema({
         required: true,
         min: 1,
     },
-    selectedVariants: [{
-        name: String,
-        value: String,
-    }],
+    // Flat variant snapshot
+    variant: {
+        size: String,
+        color: String,
+    },
     subtotal: {
         type: Number,
         required: true,
     },
 }, { _id: true });
+
 
 // Shipping address schema (Nepal format)
 const shippingAddressSchema = new mongoose.Schema({
