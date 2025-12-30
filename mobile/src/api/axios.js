@@ -4,9 +4,15 @@ import { Platform } from 'react-native';
 
 // Use machine's local IP for development on real devices/emulators
 const getBaseUrl = () => {
-    // Replace with your machine's local IP (found via ipconfig/ifconfig)
+    // Replace with your machine's local IP for DEV, but use PROD URL for build
     const LOCAL_IP = '192.168.1.3'; 
     
+    // Check if we are in production build (you can add specific logic or just default to Prod for the build)
+    // For now, let's stick to the Production URL for the deployed app.
+    if (!__DEV__) {
+        return 'https://backendnevan.nevanhandicraft.com.np/api/v1';
+    }
+
     if (Platform.OS === 'web') return 'http://localhost:5000/api/v1';
     if (Platform.OS === 'android') return `http://${LOCAL_IP}:5000/api/v1`;
     return `http://${LOCAL_IP}:5000/api/v1`; // iOS
