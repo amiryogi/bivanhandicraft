@@ -8,7 +8,8 @@ import Product from "../models/Product";
 import { PaymentService } from "./payment";
 import { paginate, PaginationResult } from "../utils/helpers";
 import AppError from "../utils/AppError";
-import { sendOrderStatusNotification } from "./pushNotificationService";
+import { sendOrderStatusNotification, sendOrderPlacedNotification, sendNewOrderToAdmins } from "./pushNotificationService";
+import User from "../models/User";
 
 interface ShippingAddress {
   name: string;
@@ -191,6 +192,31 @@ const createOrder = async (
   // For online payments, cart is cleared after successful payment callback
   if (paymentMethod === "cod") {
     await (cart as any).clear();
+  }
+
+  // Send push notifications (fire-and-forget, don't block order creation)
+  try {
+    // Get customer name for admin notification
+    const customer = await User.findById(userId).select("name");
+    const customerName = customer?.name || "Customer";
+
+    // Notify customer
+    sendOrderPlacedNotification(
+      userId,
+      (order as any)._id.toString(),
+      (order as any).orderNumber,
+      total,
+    ).catch((err) => console.error("Failed to send order placed notification:", err));
+
+    // Notify admins
+    sendNewOrderToAdmins(
+      (order as any)._id.toString(),
+      (order as any).orderNumber,
+      customerName,
+      total,
+    ).catch((err) => console.error("Failed to send new order admin notification:", err));
+  } catch (error) {
+    console.error("Error sending order notifications:", error);
   }
 
   return order;

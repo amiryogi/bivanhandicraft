@@ -11,6 +11,7 @@ import orderRoutes from "./orderRoutes";
 import paymentRoutes from "./paymentRoutes";
 import adminRoutes from "./adminRoutes";
 import wishlistRoutes from "./wishlistRoutes";
+import notificationRoutes from "./notificationRoutes";
 
 const router = express.Router();
 
@@ -23,6 +24,8 @@ router.use("/orders", orderRoutes);
 router.use("/payments", paymentRoutes);
 router.use("/admin", adminRoutes);
 router.use("/wishlist", wishlistRoutes);
+router.use("/notifications", notificationRoutes);
+
 
 // Health check endpoint
 router.get("/health", (req: Request, res: Response) => {

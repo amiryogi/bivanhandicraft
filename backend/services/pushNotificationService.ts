@@ -188,6 +188,107 @@ export async function sendPromotionalNotification(
 }
 
 /**
+ * Send order placed confirmation to customer
+ */
+export async function sendOrderPlacedNotification(
+  userId: string,
+  orderId: string,
+  orderNumber: string,
+  total: number,
+): Promise<ExpoPushTicket[]> {
+  return sendPushNotification(
+    userId,
+    "Order Placed Successfully! 🛒",
+    `Your order #${orderNumber} for NPR ${total.toLocaleString()} has been placed.`,
+    {
+      type: "order_placed",
+      orderId,
+    },
+    {
+      channelId: "orders",
+    },
+  );
+}
+
+/**
+ * Send new order alert to all admins
+ */
+export async function sendNewOrderToAdmins(
+  orderId: string,
+  orderNumber: string,
+  customerName: string,
+  total: number,
+): Promise<ExpoPushTicket[]> {
+  const User = (await import("../models/User")).default;
+  const admins = await User.find({
+    role: "admin",
+    "pushTokens.0": { $exists: true },
+    isActive: true,
+  }).select("_id");
+
+  if (admins.length === 0) {
+    console.log("No admins with push tokens found");
+    return [];
+  }
+
+  const adminIds = admins.map((a) => a._id.toString());
+
+  return sendPushNotificationToMany(
+    adminIds,
+    "New Order Received! 🔔",
+    `Order #${orderNumber} from ${customerName} - NPR ${total.toLocaleString()}`,
+    {
+      type: "new_order_admin",
+      orderId,
+    },
+    {
+      channelId: "orders",
+    },
+  );
+}
+
+/**
+ * Send back-in-stock notification to a user
+ */
+export async function sendBackInStockNotification(
+  userId: string,
+  productName: string,
+  productSlug: string,
+): Promise<ExpoPushTicket[]> {
+  return sendPushNotification(
+    userId,
+    "Back in Stock! 🎉",
+    `"${productName}" is now available. Get it before it's gone!`,
+    {
+      type: "back_in_stock",
+      productSlug,
+    },
+    {
+      channelId: "promotions",
+    },
+  );
+}
+
+/**
+ * Send featured product announcement to all users
+ */
+export async function sendFeaturedProductNotification(
+  productName: string,
+  productSlug: string,
+  price: number,
+): Promise<ExpoPushTicket[]> {
+  return sendPromotionalNotification(
+    "New Arrival! ✨",
+    `Check out "${productName}" - NPR ${price.toLocaleString()}`,
+    {
+      type: "featured_product",
+      productSlug,
+    },
+  );
+}
+
+
+/**
  * Internal function to send messages to Expo Push API
  */
 async function sendPushMessages(
@@ -228,16 +329,46 @@ async function sendPushMessages(
     }
   }
 
-  // Log any errors
-  tickets.forEach((ticket, index) => {
+  // Log any errors and clean up invalid tokens
+  for (let i = 0; i < tickets.length; i++) {
+    const ticket = tickets[i];
     if (ticket.status === "error") {
       console.error(
-        `Push notification error for message ${index}:`,
+        `Push notification error for message ${i}:`,
         ticket.message,
-        ticket.details?.error,
+        ticket.details?.error
       );
+
+      // Handle DeviceNotRegistered error
+      if (ticket.details?.error === "DeviceNotRegistered") {
+        // We need to find the token that caused this error
+        // Since tickets map 1:1 to messages, we can use the index
+        const invalidToken = messages[i]?.to;
+        if (invalidToken) {
+           // We need to import dynamically to avoid circular dependency if authService uses this service
+           // But here authService doesn't import pushNotificationService, so it's fine. 
+           // However, let's use the one we have or import if needed.
+           // We'll trust the import at top of file for getUserPushTokens, 
+           // but unregisterPushToken might not be exported from there in the original file view?
+           // Let's check authService exports first. It exports unregisterPushToken.
+           const { unregisterPushToken } = await import("./authService"); // Dynamic import to be safe
+           
+           // We need a user ID, but unregisterPushToken needs userId AND token.
+           // Our current unregisterPushToken implementation requires userId.
+           // This is a problem because we only have the token here.
+           // We should update unregisterPushToken to work with just token, OR find user by token.
+           
+           // Let's try to find the user by token using the User model directly to be efficient
+           const User = (await import("../models/User")).default;
+           await User.updateOne(
+             { "pushTokens.token": invalidToken },
+             { $pull: { pushTokens: { token: invalidToken } } }
+           );
+           console.log(`Cleaned up invalid push token: ${invalidToken}`);
+        }
+      }
     }
-  });
+  }
 
   return tickets;
 }
@@ -247,4 +378,9 @@ export default {
   sendPushNotificationToMany,
   sendOrderStatusNotification,
   sendPromotionalNotification,
+  sendOrderPlacedNotification,
+  sendNewOrderToAdmins,
+  sendBackInStockNotification,
+  sendFeaturedProductNotification,
 };
+

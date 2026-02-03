@@ -25,55 +25,95 @@ interface NetworkStatusProps {
 }
 
 const NetworkStatus: React.FC<NetworkStatusProps> = ({
-  checkUrl = "https://www.google.com/generate_204",
-  checkInterval = 10000,
+  checkUrl = "https://clients3.google.com/generate_204",
+  checkInterval = 15000,
   showReconnected = true,
 }) => {
   const [isConnected, setIsConnected] = useState<boolean | null>(null);
   const [showStatus, setShowStatus] = useState(false);
   const slideAnim = useRef(new Animated.Value(-50)).current;
   const wasDisconnected = useRef(false);
+  const failedChecks = useRef(0);
+  const isFirstCheck = useRef(true);
 
   const checkConnectivity = async () => {
-    try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 5000);
+    // Try multiple endpoints for reliability
+    const endpoints = [
+      checkUrl,
+      "https://www.google.com/generate_204",
+      "https://httpbin.org/status/200",
+    ];
 
-      const response = await fetch(checkUrl, {
-        method: "HEAD",
-        cache: "no-store",
-        signal: controller.signal,
-      });
+    let connected = false;
 
-      clearTimeout(timeout);
+    for (const endpoint of endpoints) {
+      try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 8000);
 
-      const connected = response.ok || response.status === 204;
+        const response = await fetch(endpoint, {
+          method: "HEAD",
+          cache: "no-store",
+          signal: controller.signal,
+        });
 
-      if (
-        !isConnected &&
-        connected &&
-        wasDisconnected.current &&
-        showReconnected
-      ) {
-        // Show reconnected message briefly
-        setIsConnected(true);
-        setShowStatus(true);
-        setTimeout(() => {
-          hideStatus();
-        }, 2000);
-      } else if (!connected) {
-        wasDisconnected.current = true;
-        setIsConnected(false);
-        setShowStatus(true);
-        showStatusBar();
+        clearTimeout(timeout);
+
+        if (response.ok || response.status === 204) {
+          connected = true;
+          break;
+        }
+      } catch {
+        // Try next endpoint
+        continue;
       }
+    }
 
-      setIsConnected(connected);
-    } catch (error) {
+    // Reset failed checks counter on success
+    if (connected) {
+      failedChecks.current = 0;
+    } else {
+      failedChecks.current += 1;
+    }
+
+    // On first check, be more lenient - don't show offline immediately
+    if (isFirstCheck.current) {
+      isFirstCheck.current = false;
+      if (!connected) {
+        // Give benefit of doubt on first check, wait for second check
+        setIsConnected(true);
+        return;
+      }
+    }
+
+    // Require 2 consecutive failed checks before showing offline (avoid false positives)
+    const shouldShowOffline = !connected && failedChecks.current >= 2;
+
+    if (
+      isConnected === false &&
+      connected &&
+      wasDisconnected.current &&
+      showReconnected
+    ) {
+      // Show reconnected message briefly
+      setIsConnected(true);
+      setShowStatus(true);
+      setTimeout(() => {
+        hideStatus();
+      }, 2000);
+    } else if (shouldShowOffline && isConnected !== false) {
       wasDisconnected.current = true;
       setIsConnected(false);
       setShowStatus(true);
       showStatusBar();
+    } else if (connected && !showStatus) {
+      setIsConnected(true);
+    }
+
+    if (connected) {
+      setIsConnected(true);
+    } else if (failedChecks.current >= 2) {
+      setIsConnected(false);
     }
   };
 

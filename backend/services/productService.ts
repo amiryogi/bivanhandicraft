@@ -10,6 +10,7 @@ import { paginate, PaginationResult } from "../utils/helpers";
 import AppError from "../utils/AppError";
 import { deleteImage } from "../config/cloudinary";
 import { cache, CACHE_KEYS } from "../utils/cache";
+import { sendFeaturedProductNotification } from "./pushNotificationService";
 
 interface ProductsOptions {
   page?: number;
@@ -203,6 +204,16 @@ const createProduct = async (productData: ProductData): Promise<IProduct> => {
   }
 
   const product = await Product.create(productData);
+
+  // Send featured product notification if product is featured
+  if (productData.isFeatured) {
+    sendFeaturedProductNotification(
+      product.name,
+      product.slug,
+      product.price,
+    ).catch((err) => console.error("Failed to send featured product notification:", err));
+  }
+
   return product;
 };
 
@@ -217,6 +228,9 @@ const updateProduct = async (
   if (!product) {
     throw new AppError("Product not found", 404);
   }
+
+  // Track if this is becoming newly featured
+  const becomingFeatured = updateData.isFeatured === true && !product.isFeatured;
 
   // If category is being updated, verify it exists
   if (updateData.category) {
@@ -253,6 +267,15 @@ const updateProduct = async (
 
   Object.assign(product, updateData);
   await product.save();
+
+  // Send notification if product is newly featured
+  if (becomingFeatured) {
+    sendFeaturedProductNotification(
+      product.name,
+      product.slug,
+      product.price,
+    ).catch((err) => console.error("Failed to send featured product notification:", err));
+  }
 
   return product;
 };
